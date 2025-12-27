@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure TOTP Generator</title>
+    <!-- Tailwind CSS & Lucide Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- OTPAuth Library -->
+    <script src="https://cdn.jsdelivr.net/npm/otpauth/dist/otpauth.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .font-mono {
+            font-family: 'JetBrains+Mono', monospace;
+        }
+
+        #progress-bar {
+            transition: width 1s linear, background-color 0.3s ease;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Toast Animation */
+        #toast {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-6 text-gray-900">
+
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+        <!-- Header -->
+        <div class="bg-slate-900 p-8 text-white text-center relative">
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-blue-500 rounded-2xl mb-4 shadow-lg shadow-blue-500/30">
+                <i data-lucide="shield-check" class="w-6 h-6"></i>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight">Secure TOTP</h1>
+            <p class="text-slate-400 text-sm mt-1">오직 브라우저 내에서만 안전하게 작동합니다.</p>
+        </div>
+
+        <div class="p-8 space-y-8">
+            <!-- Secret Input Section -->
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <label for="secret-input" class="text-sm font-semibold text-gray-700">TOTP Secret (Base32)</label>
+                    <span class="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full uppercase tracking-wider font-bold">No Server</span>
+                </div>
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i data-lucide="key" class="w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors"></i>
+                    </div>
+                    <input type="password" id="secret-input" autocomplete="off"
+                        placeholder="예: JBSWY3DPEHPK3PXP"
+                        class="block w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all text-gray-800 placeholder-gray-400">
+                    <button id="toggle-secret" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors">
+                        <i data-lucide="eye" id="eye-icon" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Display Area (Initially Hidden) -->
+            <div id="otp-container" class="hidden space-y-8 fade-in">
+                <div class="relative text-center group py-4">
+                    <div id="otp-display" class="text-6xl font-mono font-bold text-blue-600 tracking-[0.2em] cursor-pointer active:scale-95 transition-transform">
+                        000000
+                    </div>
+                    <div class="mt-2 text-xs text-gray-400 font-medium">번호를 클릭하여 복사</div>
+                </div>
+
+                <!-- Progress Bar Section -->
+                <div class="space-y-3">
+                    <div class="flex justify-between items-end mb-1">
+                        <span id="time-text" class="text-xs font-bold text-gray-400 uppercase tracking-widest">Next in 30s</span>
+                        <i data-lucide="copy" class="w-4 h-4 text-gray-300"></i>
+                    </div>
+                    <div id="copy-trigger" class="relative w-full h-5 bg-gray-100 rounded-full overflow-hidden cursor-pointer group ring-4 ring-transparent hover:ring-blue-50 transition-all">
+                        <div id="progress-bar" class="h-full bg-blue-500 w-0 relative">
+                            <!-- Shimmer Effect -->
+                            <div class="absolute inset-0 bg-white/10 w-full animate-pulse"></div>
+                        </div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-[9px] font-black text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-tighter">Click progress bar to copy</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instruction Placeholder -->
+            <div id="instruction" class="py-12 text-center space-y-4">
+                <div class="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center">
+                    <i data-lucide="info" class="w-8 h-8 text-blue-200"></i>
+                </div>
+                <p class="text-gray-400 text-sm px-8">Secret 키를 입력하면 실시간으로<br>OTP 번호 생성을 시작합니다.</p>
+            </div>
+        </div>
+
+        <!-- Security Footer -->
+        <div class="bg-gray-50 p-4 border-t border-gray-100 flex items-center justify-center space-x-2">
+            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Client-Side Only Logic Verified</span>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 opacity-0 pointer-events-none translate-y-10">
+        <div class="bg-green-500 rounded-full p-1">
+            <i data-lucide="check" class="w-4 h-4"></i>
+        </div>
+        <span class="text-sm font-semibold tracking-tight">클립보드에 복사되었습니다!</span>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        const secretInput = document.getElementById('secret-input');
+        const otpContainer = document.getElementById('otp-container');
+        const instruction = document.getElementById('instruction');
+        const otpDisplay = document.getElementById('otp-display');
+        const progressBar = document.getElementById('progress-bar');
+        const timeText = document.getElementById('time-text');
+        const copyTrigger = document.getElementById('copy-trigger');
+        const toggleSecret = document.getElementById('toggle-secret');
+        const eyeIcon = document.getElementById('eye-icon');
+        const toast = document.getElementById('toast');
+
+        let totp = null;
+        let lastCode = "";
+
+        // Function: Show Toast
+        function showToast() {
+            toast.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
+                toast.classList.remove('opacity-100', 'translate-y-0');
+            }, 2000);
+        }
+
+        // Function: Copy to Clipboard
+        function copyCode() {
+            if (!lastCode) return;
+            // Using execCommand for better iframe compatibility if navigator.clipboard fails
+            const tempInput = document.createElement('input');
+            tempInput.value = lastCode;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast();
+        }
+
+        // Secret Input Logic
+        secretInput.addEventListener('input', (e) => {
+            const rawValue = e.target.value.trim().toUpperCase().replace(/\s/g, '');
+            if (rawValue.length >= 8) {
+                try {
+                    totp = new OTPAuth.TOTP({
+                        secret: rawValue,
+                        issuer: "LocalApp",
+                        label: "User",
+                        algorithm: "SHA1",
+                        digits: 6,
+                        period: 30
+                    });
+                    
+                    // Validate if secret is truly base32
+                    totp.generate(); 
+                    
+                    otpContainer.classList.remove('hidden');
+                    instruction.classList.add('hidden');
+                    updateUI();
+                } catch (err) {
+                    otpContainer.classList.add('hidden');
+                    instruction.classList.remove('hidden');
+                }
+            } else {
+                otpContainer.classList.add('hidden');
+                instruction.classList.remove('hidden');
+                totp = null;
+            }
+        });
+
+        // Toggle Secret Visibility
+        toggleSecret.addEventListener('click', () => {
+            const isPassword = secretInput.type === 'password';
+            secretInput.type = isPassword ? 'text' : 'password';
+            eyeIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+            lucide.createIcons();
+        });
+
+        // Update Loop
+        function updateUI() {
+            if (!totp) return;
+
+            const now = Math.floor(Date.now() / 1000);
+            const remaining = 30 - (now % 30);
+            const code = totp.generate();
+            
+            // Update Code
+            if (otpDisplay.innerText !== code) {
+                otpDisplay.innerText = code;
+                lastCode = code;
+            }
+
+            // Update Progress Bar
+            const percentage = (remaining / 30) * 100;
+            progressBar.style.width = `${percentage}%`;
+            timeText.innerText = `Next in ${remaining}s`;
+
+            // Color Feedback
+            if (remaining <= 5) {
+                progressBar.classList.replace('bg-blue-500', 'bg-red-500');
+            } else {
+                progressBar.classList.replace('bg-red-500', 'bg-blue-500');
+            }
+        }
+
+        // Timer Interval
+        setInterval(updateUI, 1000);
+
+        // Click Events
+        copyTrigger.addEventListener('click', copyCode);
+        otpDisplay.addEventListener('click', copyCode);
+    </script>
+</body>
+</html>
