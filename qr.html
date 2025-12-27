@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern QR Code Generator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- EasyQRCodeJS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/easyqrcodejs@4.4.13/dist/easy.qrcode.min.js"></script>
+    <!-- Lucide Icons (SVG) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .qr-container canvas, .qr-container img, .qr-container svg {
+            max-width: 100% !important;
+            height: auto !important;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 transition-colors duration-300 min-h-screen flex flex-col">
+
+    <!-- Navigation / Header -->
+    <nav class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="p-2 bg-primary rounded-lg">
+                <i data-lucide="qr-code" class="text-white w-6 h-6"></i>
+            </div>
+            <span class="text-xl font-bold text-slate-800 dark:text-white uppercase tracking-tight">QR Studio</span>
+        </div>
+        <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all">
+            <i data-lucide="sun" id="sun-icon" class="hidden"></i>
+            <i data-lucide="moon" id="moon-icon"></i>
+        </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow p-4 md:p-8 flex items-center justify-center">
+        <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Panel: Controls -->
+            <div class="lg:col-span-7 space-y-6">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 md:p-8 border border-slate-100 dark:border-slate-700">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2">
+                            <i data-lucide="type" class="w-5 h-5"></i> 데이터 입력
+                        </h2>
+                        <span id="char-count" class="text-xs font-medium text-slate-400">0 자</span>
+                    </div>
+                    <textarea id="qr-text" placeholder="URL이나 텍스트를 입력해 보세요..." 
+                              class="w-full h-32 p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary outline-none transition dark:text-white text-lg resize-none"></textarea>
+                    <div id="error-msg" class="mt-2 text-sm text-red-500 hidden flex items-center gap-1">
+                        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                        <span>데이터가 너무 길어 QR 코드를 생성할 수 없습니다.</span>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 md:p-8 border border-slate-100 dark:border-slate-700">
+                    <h2 class="text-lg font-semibold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                        <i data-lucide="settings-2" class="w-5 h-5"></i> 디자인 커스터마이징
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Color Pickers -->
+                        <div class="space-y-4">
+                            <label class="block">
+                                <span class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2 block">점(Foreground) 색상</span>
+                                <div class="flex items-center gap-3">
+                                    <input type="color" id="color-dark" value="#000000" class="h-10 w-20 cursor-pointer rounded bg-transparent border-0">
+                                    <span class="text-xs text-slate-400 font-mono uppercase" id="color-dark-hex">#000000</span>
+                                </div>
+                            </label>
+                            <label class="block">
+                                <span class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2 block">배경(Background) 색상</span>
+                                <div class="flex items-center gap-3">
+                                    <input type="color" id="color-light" value="#ffffff" class="h-10 w-20 cursor-pointer rounded bg-transparent border-0">
+                                    <span class="text-xs text-slate-400 font-mono uppercase" id="color-light-hex">#ffffff</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Sliders and Selects -->
+                        <div class="space-y-4">
+                            <label class="block">
+                                <span class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2 block">크기 (px): <span id="size-val">300</span></span>
+                                <input type="range" id="size-slider" min="128" max="1024" step="16" value="300" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary">
+                            </label>
+                            <label class="block">
+                                <span class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2 block">오류 복구 레벨</span>
+                                <select id="error-level" class="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none dark:text-white">
+                                    <option value="L">L (7%) - 낮은 복구율 (긴 텍스트 권장)</option>
+                                    <option value="M" selected>M (15%) - 중간</option>
+                                    <option value="Q">Q (25%) - 높음</option>
+                                    <option value="H">H (30%) - 최고 (짧은 텍스트 권장)</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Preview & Download -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-8 border border-slate-100 dark:border-slate-700 flex flex-col items-center justify-center sticky top-8">
+                    <h2 class="text-sm font-bold text-slate-400 dark:text-slate-500 mb-6 uppercase tracking-widest">Preview</h2>
+                    
+                    <div id="qrcode" class="qr-container bg-white p-4 rounded-xl shadow-inner border border-slate-100 dark:border-slate-700 transition-all duration-300 flex items-center justify-center min-h-[200px] w-full aspect-square">
+                        <p class="text-slate-400 text-sm">입력을 기다리는 중...</p>
+                    </div>
+
+                    <div class="w-full mt-10 grid grid-cols-2 gap-4">
+                        <button id="download-png" class="flex items-center justify-center gap-2 bg-slate-800 dark:bg-white text-white dark:text-slate-900 py-3.5 px-4 rounded-xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i data-lucide="image" class="w-4 h-4"></i> Save PNG
+                        </button>
+                        <button id="download-svg" class="flex items-center justify-center gap-2 bg-white dark:bg-slate-700 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-600 py-3.5 px-4 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-600 hover:scale-[1.02] active:scale-[0.98] transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i data-lucide="file-type-2" class="w-4 h-4"></i> Save SVG
+                        </button>
+                    </div>
+                    
+                    <button id="copy-btn" class="w-full mt-4 flex items-center justify-center gap-2 text-slate-500 hover:text-primary transition-colors py-2 text-sm font-medium disabled:opacity-50">
+                        <i data-lucide="copy" class="w-4 h-4"></i> Copy to Clipboard
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="p-6 text-center text-slate-400 text-sm">
+        Built with HTML, Tailwind & Vanilla JS - 100% Client-Side
+    </footer>
+
+    <script>
+        // DOM Elements
+        const textInput = document.getElementById('qr-text');
+        const charCount = document.getElementById('char-count');
+        const errorMsg = document.getElementById('error-msg');
+        const colorDarkInput = document.getElementById('color-dark');
+        const colorLightInput = document.getElementById('color-light');
+        const colorDarkHex = document.getElementById('color-dark-hex');
+        const colorLightHex = document.getElementById('color-light-hex');
+        const sizeSlider = document.getElementById('size-slider');
+        const sizeValText = document.getElementById('size-val');
+        const errorLevelSelect = document.getElementById('error-level');
+        const qrContainer = document.getElementById('qrcode');
+        const downloadPngBtn = document.getElementById('download-png');
+        const downloadSvgBtn = document.getElementById('download-svg');
+        const copyBtn = document.getElementById('copy-btn');
+        const themeToggle = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+
+        // Generate QR Code Function
+        function generateQR() {
+            if (typeof QRCode === 'undefined') {
+                qrContainer.innerHTML = '<p class="text-red-400 text-sm">라이브러리 로딩에 실패했습니다.</p>';
+                return;
+            }
+
+            const text = textInput.value;
+            const colorDark = colorDarkInput.value;
+            const colorLight = colorLightInput.value;
+            const size = parseInt(sizeSlider.value);
+            const errorLevel = errorLevelSelect.value;
+
+            charCount.textContent = `${text.length} 자`;
+            colorDarkHex.textContent = colorDark.toUpperCase();
+            colorLightHex.textContent = colorLight.toUpperCase();
+            sizeValText.textContent = size;
+            errorMsg.classList.add('hidden');
+            
+            if (!text || text.trim() === "") {
+                qrContainer.innerHTML = '<p class="text-slate-400 text-sm">입력을 기다리는 중...</p>';
+                toggleButtons(true);
+                return;
+            }
+
+            try {
+                // Clear and Create
+                qrContainer.innerHTML = "";
+                new QRCode(qrContainer, {
+                    text: text,
+                    width: size,
+                    height: size,
+                    colorDark: colorDark,
+                    colorLight: colorLight,
+                    correctLevel: QRCode.CorrectLevel[errorLevel],
+                    quietZone: 15,
+                    quietZoneColor: colorLight,
+                    drawer: 'canvas' // UI Preview explicitly uses canvas
+                });
+                toggleButtons(false);
+            } catch (e) {
+                console.error("Error generating QR:", e);
+                showErrorUI();
+            }
+        }
+
+        function toggleButtons(disabled) {
+            downloadPngBtn.disabled = disabled;
+            downloadSvgBtn.disabled = disabled;
+            copyBtn.disabled = disabled;
+        }
+
+        function showErrorUI() {
+            errorMsg.classList.remove('hidden');
+            toggleButtons(true);
+            qrContainer.innerHTML = `
+                <div class="flex flex-col items-center gap-2 text-center p-4">
+                    <i data-lucide="shield-alert" class="w-12 h-12 text-red-400"></i>
+                    <p class="text-slate-500 text-sm font-medium">데이터 용량 초과</p>
+                    <p class="text-slate-400 text-xs">텍스트를 줄이거나 오류 복구 레벨을 'L'로 변경하세요.</p>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // Event Listeners
+        [textInput, colorDarkInput, colorLightInput, sizeSlider, errorLevelSelect].forEach(el => {
+            el.addEventListener('input', generateQR);
+        });
+
+        // Download PNG
+        downloadPngBtn.addEventListener('click', () => {
+            const canvas = qrContainer.querySelector('canvas');
+            if (canvas) {
+                const link = document.createElement('a');
+                link.download = `qrcode_${Date.now()}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            }
+        });
+
+        // Enhanced SVG Export Logic
+        downloadSvgBtn.addEventListener('click', () => {
+            if (typeof QRCode === 'undefined' || downloadSvgBtn.disabled) return;
+            
+            const tempDiv = document.createElement('div');
+            // Ensure visibility is hidden but appended to DOM to allow full rendering
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            document.body.appendChild(tempDiv);
+
+            try {
+                // Explicitly request SVG drawer for export
+                new QRCode(tempDiv, {
+                    text: textInput.value,
+                    width: parseInt(sizeSlider.value),
+                    height: parseInt(sizeSlider.value),
+                    colorDark: colorDarkInput.value,
+                    colorLight: colorLightInput.value,
+                    correctLevel: QRCode.CorrectLevel[errorLevelSelect.value],
+                    drawer: 'svg', // Important: force SVG drawer
+                    useSVG: true   // Force SVG mode
+                });
+
+                // Increase timeout slightly and check multiple times if needed
+                let attempts = 0;
+                const checkSVG = setInterval(() => {
+                    const svg = tempDiv.querySelector('svg');
+                    attempts++;
+
+                    if (svg) {
+                        clearInterval(checkSVG);
+                        svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+                        const svgData = new XMLSerializer().serializeToString(svg);
+                        const svgBlob = new Blob([svgData], {type: "image/svg+xml;charset=utf-8"});
+                        const url = URL.createObjectURL(svgBlob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `qrcode_${Date.now()}.svg`;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                        document.body.removeChild(tempDiv);
+                    } else if (attempts > 10) {
+                        clearInterval(checkSVG);
+                        console.error("SVG generation timed out.");
+                        document.body.removeChild(tempDiv);
+                    }
+                }, 50);
+            } catch (err) {
+                console.error("SVG Export error:", err);
+                if (tempDiv.parentNode) document.body.removeChild(tempDiv);
+            }
+        });
+
+        // Copy to Clipboard
+        copyBtn.addEventListener('click', async () => {
+            const canvas = qrContainer.querySelector('canvas');
+            if (!canvas || copyBtn.disabled) return;
+            try {
+                canvas.toBlob(async (blob) => {
+                    const item = new ClipboardItem({ "image/png": blob });
+                    await navigator.clipboard.write([item]);
+                    const originalHTML = copyBtn.innerHTML;
+                    copyBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-green-500"></i> Copied!`;
+                    lucide.createIcons();
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalHTML;
+                        lucide.createIcons();
+                    }, 2000);
+                });
+            } catch (err) {
+                console.error("Failed to copy:", err);
+            }
+        });
+
+        // Theme Toggle
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            updateThemeIcons();
+        });
+
+        function updateThemeIcons() {
+            const isDark = document.documentElement.classList.contains('dark');
+            sunIcon.classList.toggle('hidden', !isDark);
+            moonIcon.classList.toggle('hidden', isDark);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+            updateThemeIcons();
+        });
+
+        window.addEventListener('load', () => {
+            let checkCount = 0;
+            const checkLib = setInterval(() => {
+                if (typeof QRCode !== 'undefined') {
+                    clearInterval(checkLib);
+                    generateQR();
+                } else if (checkCount > 50) {
+                    clearInterval(checkLib);
+                }
+                checkCount++;
+            }, 100);
+        });
+    </script>
+</body>
+</html>
