@@ -298,26 +298,71 @@
             }
         });
 
-        // Copy to Clipboard
+        // Copy to Clipboard with Mobile Support
         copyBtn.addEventListener('click', async () => {
             const canvas = qrContainer.querySelector('canvas');
             if (!canvas || copyBtn.disabled) return;
+            
+            const originalHTML = copyBtn.innerHTML;
+            
+            // Check if Clipboard API with image support is available
+            let hasClipboardSupport = false;
             try {
-                canvas.toBlob(async (blob) => {
+                hasClipboardSupport = 
+                    navigator.clipboard && 
+                    typeof ClipboardItem !== 'undefined' && 
+                    typeof ClipboardItem.supports === 'function' &&
+                    ClipboardItem.supports('image/png');
+            } catch (err) {
+                console.log('Clipboard API detection failed:', err);
+            }
+            
+            if (hasClipboardSupport) {
+                // Modern Clipboard API (works on desktop browsers)
+                try {
+                    const blob = await new Promise((resolve, reject) => {
+                        canvas.toBlob((blob) => {
+                            if (blob) {
+                                resolve(blob);
+                            } else {
+                                reject(new Error('Failed to create blob from canvas'));
+                            }
+                        }, 'image/png');
+                    });
                     const item = new ClipboardItem({ "image/png": blob });
                     await navigator.clipboard.write([item]);
-                    const originalHTML = copyBtn.innerHTML;
+                    
                     copyBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-green-500"></i> Copied!`;
                     lucide.createIcons();
                     setTimeout(() => {
                         copyBtn.innerHTML = originalHTML;
                         lucide.createIcons();
                     }, 2000);
-                });
-            } catch (err) {
-                console.error("Failed to copy:", err);
+                } catch (err) {
+                    console.error("Clipboard API failed:", err);
+                    showCopyFallback(canvas, originalHTML);
+                }
+            } else {
+                // Fallback for mobile browsers (iOS, Android)
+                showCopyFallback(canvas, originalHTML);
             }
         });
+        
+        function showCopyFallback(canvas, originalHTML) {
+            // For mobile devices, save the image directly since clipboard API is not supported
+            const link = document.createElement('a');
+            link.download = `qrcode_${Date.now()}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            
+            // Update button text to inform user
+            copyBtn.innerHTML = `<i data-lucide="download" class="w-4 h-4 text-blue-500"></i> Downloaded!`;
+            lucide.createIcons();
+            setTimeout(() => {
+                copyBtn.innerHTML = originalHTML;
+                lucide.createIcons();
+            }, 2000);
+        }
 
         // Theme Toggle
         themeToggle.addEventListener('click', () => {
