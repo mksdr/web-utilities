@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Color Picker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom range slider styling */
+        input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #ffffff; cursor: pointer; border: 2px solid #3b82f6; margin-top: -6px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; border-radius: 3px; background: #e2e8f0; }
+        .dark input[type=range]::-webkit-slider-runnable-track { background: #334155; }
+        #hueSlider::-webkit-slider-runnable-track { background: transparent; }
+        
+        #colorCanvas { cursor: crosshair; border-radius: 8px; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen transition-colors duration-300">
+
+    <div class="max-w-6xl mx-auto p-4 md:p-8">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-500">PRO PICKER</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Professional Design Tool</p>
+            </div>
+            <button id="themeToggle" class="p-2 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700">
+                <svg id="sunIcon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <svg id="moonIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left Column: Color Selection -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+                    <canvas id="colorCanvas" class="w-full h-64 mb-4"></canvas>
+                    <div class="relative h-6 rounded-lg mb-4" style="background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);">
+                        <input type="range" id="hueSlider" min="0" max="360" value="200" class="absolute inset-0 w-full opacity-100">
+                    </div>
+                    <div class="flex gap-4">
+                        <div id="mainPreview" class="w-16 h-16 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner"></div>
+                        <div class="flex-1 space-y-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold w-10">HEX</span>
+                                <input type="text" id="hexOutput" class="flex-1 bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-3 py-1 font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                <button onclick="copyValue('hexOutput')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition" title="복사">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                                </button>
+                            </div>
+                            <button id="eyeDropperBtn" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+                                스포이드 도구
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Section -->
+                <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+                    <h3 class="text-sm font-bold mb-3 uppercase tracking-wider text-slate-400">최근 히스토리 (최대 10개)</h3>
+                    <div id="historyContainer" class="flex flex-wrap gap-2">
+                        <!-- History items injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Analysis & Palettes -->
+            <div class="lg:col-span-7 space-y-6">
+                <!-- Color Modes Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase">RGB & HSL</h3>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs w-10">RGB</span>
+                                <input type="text" id="rgbOutput" readonly class="flex-1 bg-transparent font-mono text-sm outline-none">
+                                <button onclick="copyValue('rgbOutput')" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg></button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs w-10">HSL</span>
+                                <input type="text" id="hslOutput" readonly class="flex-1 bg-transparent font-mono text-sm outline-none">
+                                <button onclick="copyValue('hslOutput')" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase">CMYK</h3>
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="cmykOutput" readonly class="flex-1 bg-transparent font-mono text-sm outline-none">
+                            <button onclick="copyValue('cmykOutput')" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contrast Checker -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <h3 class="text-sm font-bold mb-4 uppercase tracking-wider text-slate-400">대비 분석기 (Contrast Checker)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div id="contrastPreview" class="h-32 rounded-xl flex items-center justify-center p-4 border border-slate-100 dark:border-slate-800">
+                            <span class="text-lg font-bold">The quick brown fox jumps over the lazy dog.</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-end">
+                                <span class="text-sm text-slate-500">대비율</span>
+                                <span id="contrastRatio" class="text-3xl font-black italic">4.50:1</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <div id="badgeAA" class="flex-1 text-center py-1 rounded-md text-xs font-bold uppercase">WCAG AA</div>
+                                <div id="badgeAAA" class="flex-1 text-center py-1 rounded-md text-xs font-bold uppercase">WCAG AAA</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Automatic Palettes -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <h3 class="text-sm font-bold mb-4 uppercase tracking-wider text-slate-400">자동 컬러 팔레트</h3>
+                    <div class="space-y-6">
+                        <div>
+                            <span class="text-xs text-slate-400 mb-2 block">유사색 (Analogous)</span>
+                            <div id="analogousList" class="flex h-12 rounded-lg overflow-hidden"></div>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-400 mb-2 block">보색 (Complementary)</span>
+                            <div id="complementaryList" class="flex h-12 rounded-lg overflow-hidden"></div>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-400 mb-2 block">단색 (Monochromatic)</span>
+                            <div id="monoList" class="flex h-12 rounded-lg overflow-hidden"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="mt-12 py-8 border-t border-slate-200 dark:border-slate-800 text-center text-slate-400 text-xs">
+            Professional Color Picker &copy; 2025 | No Server, Pure Client-side Logic
+        </footer>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-slate-900 text-white rounded-full text-sm font-medium shadow-2xl transition-all duration-300 opacity-0 translate-y-10 pointer-events-none">
+        클립보드에 복사되었습니다!
+    </div>
+
+    <script>
+        // State Management
+        let currentH = 200;
+        let currentS = 100;
+        let currentV = 100;
+        let history = JSON.parse(localStorage.getItem('colorHistory') || '[]');
+
+        // DOM Elements
+        const canvas = document.getElementById('colorCanvas');
+        const ctx = canvas.getContext('2d');
+        const hueSlider = document.getElementById('hueSlider');
+        const hexOutput = document.getElementById('hexOutput');
+        const mainPreview = document.getElementById('mainPreview');
+        const historyContainer = document.getElementById('historyContainer');
+        const eyeDropperBtn = document.getElementById('eyeDropperBtn');
+
+        // Initial Setup
+        window.addEventListener('load', () => {
+            initCanvas();
+            renderHistory();
+            updateUI(false); // Do not save history on load
+            
+            // Browser compatibility check for EyeDropper
+            if (!window.EyeDropper) {
+                eyeDropperBtn.disabled = true;
+                eyeDropperBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                eyeDropperBtn.title = "이 브라우저는 스포이드 도구를 지원하지 않습니다.";
+            }
+        });
+
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+        
+        themeToggle.onclick = () => {
+            document.documentElement.classList.toggle('dark');
+            sunIcon.classList.toggle('hidden');
+            moonIcon.classList.toggle('hidden');
+            updateUI(false); // Refresh contrast UI for new theme
+        };
+
+        // Canvas Logic
+        function initCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            drawCanvas();
+        }
+
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Saturation gradient (white to hue)
+            const whiteGrad = ctx.createLinearGradient(0, 0, canvas.width, 0);
+            whiteGrad.addColorStop(0, '#fff');
+            whiteGrad.addColorStop(1, `hsl(${currentH}, 100%, 50%)`);
+            ctx.fillStyle = whiteGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Value gradient (transparent to black)
+            const blackGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            blackGrad.addColorStop(0, 'rgba(0,0,0,0)');
+            blackGrad.addColorStop(1, '#000');
+            ctx.fillStyle = blackGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw selector circle
+            const x = (currentS / 100) * canvas.width;
+            const y = (1 - (currentV / 100)) * canvas.height;
+            ctx.beginPath();
+            ctx.arc(x, y, 8, 0, Math.PI * 2);
+            ctx.strokeStyle = currentV > 50 ? '#000' : '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // Canvas Input Handling
+        canvas.addEventListener('mousedown', (e) => {
+            handleCanvasInput(e);
+            window.addEventListener('mouseup', handleCanvasMouseUp);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (e.buttons === 1) handleCanvasInput(e);
+        });
+
+        function handleCanvasMouseUp() {
+            // Save to history only when user releases mouse
+            const [r, g, b] = hsvToRgb(currentH, currentS, currentV);
+            const hex = rgbToHex(r, g, b);
+            addToHistory(hex);
+            window.removeEventListener('mouseup', handleCanvasMouseUp);
+        }
+
+        function handleCanvasInput(e) {
+            const rect = canvas.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            let y = e.clientY - rect.top;
+            
+            x = Math.max(0, Math.min(x, canvas.width));
+            y = Math.max(0, Math.min(y, canvas.height));
+
+            currentS = Math.round((x / canvas.width) * 100);
+            currentV = Math.round((1 - (y / canvas.height)) * 100);
+            
+            updateUI(false); // Update preview but don't commit to history yet
+        }
+
+        // Slider Input Handling
+        hueSlider.addEventListener('input', (e) => {
+            currentH = parseInt(e.target.value);
+            updateUI(false);
+        });
+
+        hueSlider.addEventListener('change', (e) => {
+            // Commit to history when slider interaction ends
+            const [r, g, b] = hsvToRgb(currentH, currentS, currentV);
+            const hex = rgbToHex(r, g, b);
+            addToHistory(hex);
+        });
+
+        // Core Color Conversion Functions
+        function hsvToRgb(h, s, v) {
+            s /= 100; v /= 100;
+            const k = (n) => (n + h / 60) % 6;
+            const f = (n) => v - v * s * Math.max(0, Math.min(k(n), 4 - k(n), 1));
+            return [
+                Math.round(f(5) * 255),
+                Math.round(f(3) * 255),
+                Math.round(f(1) * 255)
+            ];
+        }
+
+        function rgbToHex(r, g, b) {
+            return "#" + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+        }
+
+        function hexToRgb(hex) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return [r, g, b];
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            if (max === min) h = s = 0;
+            else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return [Math.round(h * 360), parseFloat((s * 100).toFixed(1)), parseFloat((l * 100).toFixed(1))];
+        }
+
+        function rgbToCmyk(r, g, b) {
+            let c = 1 - (r / 255);
+            let m = 1 - (g / 255);
+            let y = 1 - (b / 255);
+            let k = Math.min(c, m, y);
+            if (k === 1) return [0, 0, 0, 100];
+            c = ((c - k) / (1 - k)) * 100;
+            m = ((m - k) / (1 - k)) * 100;
+            y = ((y - k) / (1 - k)) * 100;
+            k = k * 100;
+            return [c, m, y, k].map(v => parseFloat(v.toFixed(1)));
+        }
+
+        // UI Update Engine
+        function updateUI(saveHistory = false) {
+            const [r, g, b] = hsvToRgb(currentH, currentS, currentV);
+            const hex = rgbToHex(r, g, b);
+            const hsl = rgbToHsl(r, g, b);
+            const cmyk = rgbToCmyk(r, g, b);
+
+            drawCanvas();
+            mainPreview.style.backgroundColor = hex;
+            hexOutput.value = hex;
+            document.getElementById('rgbOutput').value = `rgb(${r}, ${g}, ${b})`;
+            document.getElementById('hslOutput').value = `hsl(${hsl[0]}, ${hsl[1]}%, ${hsl[2]}%)`;
+            document.getElementById('cmykOutput').value = `cmyk(${cmyk[0]}%, ${cmyk[1]}%, ${cmyk[2]}%, ${cmyk[3]}%)`;
+
+            updateContrast(r, g, b);
+            updatePalettes(currentH, currentS, currentV);
+            
+            if (saveHistory) {
+                addToHistory(hex);
+            }
+        }
+
+        // Contrast Analysis
+        function updateContrast(r, g, b) {
+            const a = [r, g, b].map(v => {
+                v /= 255;
+                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+            });
+            const luminance = 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+            
+            const isDark = document.documentElement.classList.contains('dark');
+            const bgLuminance = isDark ? 0.02 : 0.98;
+
+            let ratio = (Math.max(luminance, bgLuminance) + 0.05) / (Math.min(luminance, bgLuminance) + 0.05);
+            
+            const ratioEl = document.getElementById('contrastRatio');
+            const previewEl = document.getElementById('contrastPreview');
+            const bAA = document.getElementById('badgeAA');
+            const bAAA = document.getElementById('badgeAAA');
+
+            ratioEl.innerText = ratio.toFixed(2) + ":1";
+            previewEl.style.backgroundColor = isDark ? '#0f172a' : '#f8fafc';
+            previewEl.style.color = `rgb(${r}, ${g}, ${b})`;
+
+            const passAA = ratio >= 4.5;
+            const passAAA = ratio >= 7;
+
+            bAA.className = `flex-1 text-center py-1 rounded-md text-xs font-bold uppercase ${passAA ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+            bAA.innerText = `WCAG AA: ${passAA ? 'PASS' : 'FAIL'}`;
+            bAAA.className = `flex-1 text-center py-1 rounded-md text-xs font-bold uppercase ${passAAA ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+            bAAA.innerText = `WCAG AAA: ${passAAA ? 'PASS' : 'FAIL'}`;
+        }
+
+        // Palette Generation
+        function updatePalettes(h, s, v) {
+            const generate = (hMod, sMod = 0, vMod = 0) => {
+                const [r, g, b] = hsvToRgb((h + hMod) % 360, Math.min(100, Math.max(0, s + sMod)), Math.min(100, Math.max(0, v + vMod)));
+                return rgbToHex(r, g, b);
+            };
+
+            renderPalette('analogousList', [generate(-30), generate(-15), generate(0), generate(15), generate(30)]);
+            renderPalette('complementaryList', [generate(0), generate(180)]);
+            renderPalette('monoList', [generate(0, 0, -40), generate(0, 0, -20), generate(0), generate(0, -20, 10), generate(0, -40, 20)]);
+        }
+
+        function renderPalette(id, colors) {
+            const container = document.getElementById(id);
+            container.innerHTML = '';
+            colors.forEach(color => {
+                const div = document.createElement('div');
+                div.className = 'flex-1 cursor-pointer transition-transform hover:scale-105';
+                div.style.backgroundColor = color;
+                div.onclick = () => {
+                    loadHex(color);
+                    addToHistory(color); // Add to history when clicking palette
+                };
+                container.appendChild(div);
+            });
+        }
+
+        // History Management
+        function addToHistory(hex) {
+            // Prevent duplicate adjacent entries
+            if (history.length > 0 && history[0] === hex) return;
+            
+            history = [hex, ...history.filter(c => c !== hex)].slice(0, 10);
+            localStorage.setItem('colorHistory', JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            historyContainer.innerHTML = '';
+            history.forEach(color => {
+                const btn = document.createElement('button');
+                btn.className = 'w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 transition-transform hover:scale-110 active:scale-95';
+                btn.style.backgroundColor = color;
+                btn.onclick = () => loadHex(color);
+                historyContainer.appendChild(btn);
+            });
+        }
+
+        function loadHex(hex) {
+            const [r, g, b] = hexToRgb(hex);
+            let r_ = r / 255, g_ = g / 255, b_ = b / 255;
+            let max = Math.max(r_, g_, b_), min = Math.min(r_, g_, b_);
+            let h, s, v = max;
+            let d = max - min;
+            s = max === 0 ? 0 : d / max;
+            if (max === min) h = 0;
+            else {
+                switch (max) {
+                    case r_: h = (g_ - b_) / d + (g_ < b_ ? 6 : 0); break;
+                    case g_: h = (b_ - r_) / d + 2; break;
+                    case b_: h = (r_ - g_) / d + 4; break;
+                }
+                h /= 6;
+            }
+            currentH = Math.round(h * 360);
+            currentS = Math.round(s * 100);
+            currentV = Math.round(v * 100);
+            hueSlider.value = currentH;
+            updateUI(false); // Don't save history when loading from history
+        }
+
+        // EyeDropper API
+        eyeDropperBtn.onclick = async () => {
+            if (!window.EyeDropper) return;
+            const eyeDropper = new EyeDropper();
+            try {
+                const result = await eyeDropper.open();
+                loadHex(result.sRGBHex);
+                addToHistory(result.sRGBHex); // Save picked color
+            } catch (e) {
+                console.log("EyeDropper Cancelled");
+            }
+        };
+
+        // Utility: Copy
+        async function copyValue(id) {
+            const val = document.getElementById(id).value;
+            try {
+                await navigator.clipboard.writeText(val);
+                showToast();
+            } catch (err) {
+                const input = document.getElementById(id);
+                input.select();
+                document.execCommand('copy');
+                showToast();
+            }
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('opacity-0', 'translate-y-10');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-10');
+                toast.classList.remove('opacity-100', 'translate-y-0');
+            }, 2000);
+        }
+
+        // Manual Input sync
+        hexOutput.onchange = (e) => {
+            const val = e.target.value;
+            if (/^#[0-9A-F]{6}$/i.test(val)) {
+                loadHex(val);
+                addToHistory(val);
+            }
+        };
+
+        window.onresize = initCanvas;
+    </script>
+</body>
+</html>
