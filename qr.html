@@ -306,11 +306,16 @@
             const originalHTML = copyBtn.innerHTML;
             
             // Check if Clipboard API with image support is available
-            const hasClipboardSupport = 
-                navigator.clipboard && 
-                typeof ClipboardItem !== 'undefined' && 
-                typeof ClipboardItem.supports === 'function' &&
-                ClipboardItem.supports('image/png');
+            let hasClipboardSupport = false;
+            try {
+                hasClipboardSupport = 
+                    navigator.clipboard && 
+                    typeof ClipboardItem !== 'undefined' && 
+                    typeof ClipboardItem.supports === 'function' &&
+                    ClipboardItem.supports('image/png');
+            } catch (err) {
+                console.log('Clipboard API detection failed:', err);
+            }
             
             if (hasClipboardSupport) {
                 // Modern Clipboard API (works on desktop browsers)
