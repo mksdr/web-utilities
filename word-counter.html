@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>어절 & 단어 계산기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0F0E0C;
+      --surface: rgba(255,255,255,0.03);
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(232,196,104,0.3);
+      --text: #F0EDE6;
+      --text-muted: rgba(240,237,230,0.4);
+      --accent: #E8C468;
+      --accent-bg: rgba(232,196,104,0.10);
+      --accent-border: rgba(232,196,104,0.30);
+      --red: #F08080;
+      --green: #68E8A0;
+      --mono: 'Space Mono', monospace;
+      --sans: 'Noto Sans KR', sans-serif;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Ambient glows ── */
+    body::before,
+    body::after {
+      content: '';
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before {
+      top: -220px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 720px;
+      height: 720px;
+      background: radial-gradient(ellipse at center, rgba(232,196,104,0.08) 0%, transparent 65%);
+    }
+    body::after {
+      bottom: -160px;
+      right: -120px;
+      width: 540px;
+      height: 540px;
+      background: radial-gradient(ellipse at center, rgba(104,160,232,0.06) 0%, transparent 70%);
+    }
+
+    /* ── Layout ── */
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px 72px;
+      animation: fadeUp 0.55s cubic-bezier(.22,.68,0,1.2) both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--accent-bg);
+      border: 1px solid var(--accent-border);
+      border-radius: 100px;
+      padding: 5px 16px;
+      font-family: var(--mono);
+      font-size: 0.67rem;
+      color: var(--accent);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .header-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: blink 2.2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.25; }
+    }
+
+    .title {
+      font-family: var(--mono);
+      font-size: clamp(2rem, 8vw, 3.6rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+
+    .title em {
+      color: var(--accent);
+      font-style: normal;
+    }
+
+    .subtitle {
+      margin-top: 12px;
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Main container ── */
+    .container {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ── Editor card ── */
+    .editor-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      transition: border-color 0.22s, box-shadow 0.22s;
+    }
+
+    .editor-card:focus-within {
+      border-color: var(--border-hover);
+      box-shadow: 0 0 0 4px rgba(232,196,104,0.05);
+    }
+
+    .editor-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-label {
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      color: rgba(240,237,230,0.28);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px;
+      color: rgba(240,237,230,0.5);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      padding: 5px 13px;
+      letter-spacing: 0.06em;
+      transition: background 0.17s, color 0.17s, border-color 0.17s;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: rgba(255,255,255,0.09);
+      color: var(--text);
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    .btn.danger:hover {
+      background: rgba(240,80,80,0.10);
+      color: var(--red);
+      border-color: rgba(240,80,80,0.22);
+    }
+
+    .btn.success {
+      color: var(--green);
+      border-color: rgba(104,232,160,0.22);
+      background: rgba(104,232,160,0.07);
+    }
+
+    .editor-body {
+      position: relative;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 230px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 1rem;
+      line-height: 1.8;
+      padding: 18px 20px 48px;
+      resize: vertical;
+      caret-color: var(--accent);
+    }
+
+    textarea::placeholder {
+      color: rgba(240,237,230,0.17);
+    }
+
+    .word-badge {
+      position: absolute;
+      bottom: 13px;
+      right: 15px;
+      background: var(--accent-bg);
+      border: 1px solid var(--accent-border);
+      border-radius: 100px;
+      padding: 3px 13px;
+      font-family: var(--mono);
+      font-size: 0.73rem;
+      color: var(--accent);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .word-badge.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Stats grid ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 640px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .stat-card:first-child {
+        grid-column: span 2;
+      }
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      transition: border-color 0.2s, background 0.2s;
+      animation: fadeUp 0.5s cubic-bezier(.22,.68,0,1.2) both;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.05s; }
+    .stat-card:nth-child(2) { animation-delay: 0.10s; }
+    .stat-card:nth-child(3) { animation-delay: 0.15s; }
+    .stat-card:nth-child(4) { animation-delay: 0.20s; }
+    .stat-card:nth-child(5) { animation-delay: 0.25s; }
+
+    .stat-card.accent {
+      background: var(--accent-bg);
+      border-color: var(--accent-border);
+    }
+
+    .stat-value {
+      font-family: var(--mono);
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+      letter-spacing: -0.02em;
+      transition: color 0.2s;
+    }
+
+    .stat-card.accent .stat-value {
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    /* ── Note ── */
+    .note {
+      font-size: 0.71rem;
+      color: rgba(240,237,230,0.22);
+      text-align: center;
+      letter-spacing: 0.03em;
+      line-height: 1.6;
+      padding: 2px 0;
+    }
+
+    /* ── Number transition ── */
+    .stat-value {
+      transition: transform 0.15s cubic-bezier(.22,.68,0,1.4), color 0.2s;
+    }
+
+    .stat-value.pop {
+      animation: pop 0.18s cubic-bezier(.22,.68,0,1.6);
+    }
+
+    @keyframes pop {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <div class="header-tag">
+        <span class="header-dot"></span>
+        Word Counter
+      </div>
+      <h1 class="title">어절 <em>&</em> 단어<br>계산기</h1>
+      <p class="subtitle">한국어 · English · 문장부호 제외</p>
+    </header>
+
+    <div class="container">
+      <!-- Editor -->
+      <div class="editor-card">
+        <div class="editor-toolbar">
+          <span class="toolbar-label">입력 영역</span>
+          <div class="toolbar-actions">
+            <button class="btn" id="btn-paste">⎘ 붙여넣기</button>
+            <button class="btn" id="btn-copy">↗ 복사</button>
+            <button class="btn danger" id="btn-clear">✕ 지우기</button>
+          </div>
+        </div>
+        <div class="editor-body">
+          <textarea
+            id="editor"
+            placeholder="텍스트를 입력하거나 붙여넣으세요.&#10;Type or paste your text here..."
+            spellcheck="false"
+            autocomplete="off"
+          ></textarea>
+          <div class="word-badge" id="word-badge">0 어절</div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card accent">
+          <span class="stat-value" id="stat-words">0</span>
+          <span class="stat-label">어절 / Words</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-chars">0</span>
+          <span class="stat-label">문자 / Chars</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-chars-ns">0</span>
+          <span class="stat-label">공백 제외</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-lines">0</span>
+          <span class="stat-label">줄 수 / Lines</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-sentences">0</span>
+          <span class="stat-label">문장 수</span>
+        </div>
+      </div>
+
+      <p class="note">※ 대시(—), 콜론(:), 쉼표(,) 등 문장부호만으로 이루어진 토큰은 단어 수에서 제외됩니다.</p>
+    </div>
+  </div>
+
+  <script>
+    const PUNCT_ONLY = /^[\u0000-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u00BF\u2000-\u206F\u2010-\u2027\u2030-\u205E\u3000-\u303F\uFE10-\uFE1F\uFE30-\uFE4F\uFF00-\uFF0F\uFF1A-\uFF20\uFF3B-\uFF40\uFF5B-\uFF65\u00B7\u30FB]+$/;
+
+    const editor      = document.getElementById('editor');
+    const wordBadge   = document.getElementById('word-badge');
+    const btnPaste    = document.getElementById('btn-paste');
+    const btnCopy     = document.getElementById('btn-copy');
+    const btnClear    = document.getElementById('btn-clear');
+
+    const statEls = {
+      words:    document.getElementById('stat-words'),
+      chars:    document.getElementById('stat-chars'),
+      charsNs:  document.getElementById('stat-chars-ns'),
+      lines:    document.getElementById('stat-lines'),
+      sentences:document.getElementById('stat-sentences'),
+    };
+
+    function countWords(text) {
+      if (!text.trim()) return 0;
+      return text.trim().split(/\s+/).filter(t => t.length > 0 && !PUNCT_ONLY.test(t)).length;
+    }
+
+    function countSentences(text) {
+      if (!text.trim()) return 0;
+      const m = text.match(/[^.!?…]+[.!?…]+/g);
+      return m ? m.length : 0;
+    }
+
+    function setStatWithPop(el, value) {
+      const formatted = value.toLocaleString();
+      if (el.textContent !== formatted) {
+        el.textContent = formatted;
+        el.classList.remove('pop');
+        void el.offsetWidth; // reflow
+        el.classList.add('pop');
+      }
+    }
+
+    function update() {
+      const text = editor.value;
+      const words = countWords(text);
+
+      setStatWithPop(statEls.words,     words);
+      setStatWithPop(statEls.chars,     text.length);
+      setStatWithPop(statEls.charsNs,   text.replace(/\s/g, '').length);
+      setStatWithPop(statEls.lines,     text ? text.split('\n').length : 0);
+      setStatWithPop(statEls.sentences, countSentences(text));
+
+      wordBadge.textContent = `${words.toLocaleString()} 어절`;
+      wordBadge.classList.toggle('visible', text.length > 0);
+    }
+
+    editor.addEventListener('input', update);
+
+    /* ── Buttons ── */
+    btnClear.addEventListener('click', () => {
+      editor.value = '';
+      update();
+      editor.focus();
+    });
+
+    btnCopy.addEventListener('click', async () => {
+      if (!editor.value) return;
+      try {
+        await navigator.clipboard.writeText(editor.value);
+        btnCopy.textContent = '✓ 복사됨';
+        btnCopy.classList.add('success');
+        setTimeout(() => {
+          btnCopy.textContent = '↗ 복사';
+          btnCopy.classList.remove('success');
+        }, 1800);
+      } catch (e) {}
+    });
+
+    btnPaste.addEventListener('click', async () => {
+      try {
+        const t = await navigator.clipboard.readText();
+        editor.value = t;
+        update();
+        editor.focus();
+      } catch (e) {}
+    });
+
+    /* ── Drag & drop ── */
+    editor.addEventListener('dragover', e => e.preventDefault());
+    editor.addEventListener('drop', e => {
+      e.preventDefault();
+      const text = e.dataTransfer.getData('text/plain');
+      if (text) {
+        editor.value = text;
+        update();
+      }
+    });
+  </script>
+</body>
+</html>
