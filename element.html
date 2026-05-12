@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="auto">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>원소 주기율표 마스터</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --container-bg: #ffffff;
+            --text-color: #333333;
+            --text-muted: #666666;
+            --primary: #4A90E2;
+            --primary-hover: #357ABD;
+            --border: #e0e0e0;
+            --correct: #2ecc71;
+            --incorrect: #e74c3c;
+            --card-hover: #f9fbfc;
+            --element-metal: #d9e8fb;
+            --element-nonmetal: #fbe6d9;
+            --element-noble: #e8f9e9;
+            --element-metalloid: #f5eedc;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --primary: #bb86fc;
+            --primary-hover: #9c68db;
+            --border: #333333;
+            --card-hover: #2a2a2a;
+            --element-metal: #1f3a5f;
+            --element-nonmetal: #5f3a1f;
+            --element-noble: #1f4a24;
+            --element-metalloid: #4a3f1f;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root[data-theme="auto"] {
+                --bg-color: #121212;
+                --container-bg: #1e1e1e;
+                --text-color: #e0e0e0;
+                --text-muted: #a0a0a0;
+                --primary: #bb86fc;
+                --primary-hover: #9c68db;
+                --border: #333333;
+                --card-hover: #2a2a2a;
+                --element-metal: #1f3a5f;
+                --element-nonmetal: #5f3a1f;
+                --element-noble: #1f4a24;
+                --element-metalloid: #4a3f1f;
+            }
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', -apple-system, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); transition: background-color 0.3s, color 0.3s; height: 100vh; overflow: hidden; }
+        .app-container { max-width: 900px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; }
+        
+        /* Header & Theme */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--border); background: var(--container-bg); }
+        h1 { font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        
+        /* Home Button Style */
+        #home-btn {
+            display: none; 
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            background-color: #e67e22; 
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #home-btn:hover { background-color: #d35400; }
+        
+        select.theme-select { padding: 5px 10px; border-radius: 5px; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border); outline: none; cursor: pointer; }
+
+        /* Page Layouts */
+        .page { display: none; flex: 1; overflow-y: auto; padding: 20px; }
+        .page.active { display: flex; flex-direction: column; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Periodic Table Grid (1-20) */
+        .pt-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin-top: 40px; margin-bottom: 30px; }
+        .element-box { 
+            aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            border-radius: 4px; font-size: 0.8rem; cursor: pointer; position: relative; border: 1px solid var(--border); transition: transform 0.1s;
+        }
+        .element-box:hover { transform: scale(1.1); z-index: 10; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .el-num { font-size: 0.6rem; position: absolute; top: 2px; left: 4px; opacity: 0.8; }
+        .el-sym { font-weight: bold; font-size: 1.1rem; }
+        .el-name { font-size: 0.6rem; opacity: 0.9; }
+        
+        .metal { background-color: var(--element-metal); }
+        .nonmetal { background-color: var(--element-nonmetal); }
+        .noble { background-color: var(--element-noble); }
+        .metalloid { background-color: var(--element-metalloid); }
+
+        .element-box .tooltip {
+            visibility: hidden; position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
+            background-color: var(--text-color); color: var(--bg-color); text-align: center; padding: 5px 10px; border-radius: 6px;
+            font-size: 0.8rem; white-space: nowrap; z-index: 20; opacity: 0; transition: opacity 0.2s;
+        }
+        .element-box:hover .tooltip { visibility: visible; opacity: 1; }
+
+        /* Menu Cards */
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+        .menu-card { 
+            background: var(--container-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; 
+            cursor: pointer; text-align: center; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .menu-card:hover { transform: translateY(-3px); border-color: var(--primary); background: var(--card-hover); }
+        .menu-card h3 { color: var(--primary); margin-bottom: 8px; font-size: 1.1rem; }
+        .menu-card p { font-size: 0.9rem; color: var(--text-muted); }
+
+        /* Quiz UI */
+        .progress-bar { width: 100%; height: 8px; background: var(--border); border-radius: 4px; margin-bottom: 20px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary); transition: width 0.3s ease; }
+        .question-area { text-align: center; font-size: 1.5rem; font-weight: bold; margin: 30px 0; }
+        
+        /* Input Areas */
+        .input-area { display: flex; flex-direction: column; align-items: center; gap: 20px; flex: 1; justify-content: center; }
+        .box-input-group { display: flex; gap: 15px; align-items: center; font-size: 1.2rem; }
+        .box-input { 
+            width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; 
+            font-size: 1.8rem; font-weight: bold; border: 2px solid var(--border); border-radius: 10px; 
+            background: var(--container-bg); cursor: pointer; transition: border-color 0.2s;
+        }
+        .box-input.active { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2); }
+        
+        /* Numpad */
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; width: 100%; }
+        .numpad button, .mcq-btn { 
+            padding: 15px; font-size: 1.2rem; border: none; border-radius: 10px; background: var(--container-bg); 
+            color: var(--text-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: background 0.1s; border: 1px solid var(--border);
+        }
+        .numpad button:active, .mcq-btn:active { transform: scale(0.95); background: var(--border); }
+        .numpad .wide { grid-column: span 3; background: var(--primary); color: white; font-weight: bold; border: none; }
+        .numpad .wide:hover { background: var(--primary-hover); }
+
+        /* 통일된 액션 버튼 (제출하기, 돌아가기 등) */
+        .action-btn {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            margin: 20px auto 0;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            background-color: var(--primary);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .action-btn:hover { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .action-btn:active { transform: translateY(0) scale(0.98); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        .std-input { padding: 15px; font-size: 1.2rem; width: 100%; max-width: 300px; border: 2px solid var(--border); border-radius: 8px; background: var(--bg-color); color: var(--text-color); text-align: center; outline: none; }
+        .std-input:focus { border-color: var(--primary); }
+        .std-select { appearance: none; padding: 15px; font-size: 1.2rem; width: 140px; border: 2px solid var(--border); border-radius: 8px; background: var(--container-bg); color: var(--text-color); outline: none; cursor: pointer; text-align: center; }
+
+        .flash-correct { animation: flashG 0.5s; }
+        .flash-incorrect { animation: flashR 0.5s; }
+        @keyframes flashG { 0% { background-color: var(--correct); } 100% { background-color: transparent; } }
+        @keyframes flashR { 0% { background-color: var(--incorrect); } 100% { background-color: transparent; } }
+
+        .result-container { display: flex; flex-direction: column; gap: 20px; height: 100%; }
+        .score-board { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--container-bg); border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .score-text { font-size: 4rem; font-weight: bold; color: var(--primary); }
+        .review-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 10px; background: var(--container-bg); border-radius: 12px; border: 1px solid var(--border); }
+        .review-item { padding: 15px; border-radius: 8px; background: var(--bg-color); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid var(--incorrect); }
+        .review-item.correct-item { border-left-color: var(--correct); }
+        
+        @media (min-width: 768px) {
+            .result-container { flex-direction: row; }
+            .score-board, .review-list { flex: 1; }
+            .page { padding: 40px; }
+        }
+
+        .modal-overlay { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: var(--container-bg); padding: 30px; border-radius: 12px; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .modal-btn { display: block; width: 100%; padding: 15px; margin-top: 15px; border: none; border-radius: 8px; background: var(--primary); color: white; font-size: 1.1rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="app-body">
+    <header>
+        <h1>
+            원소 마스터 (1~20)
+            <button id="home-btn" onclick="goHome()">처음으로</button>
+        </h1>
+        <select class="theme-select" id="themeSelect">
+            <option value="auto">Auto</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+        </select>
+    </header>
+
+    <!-- 랜딩 페이지 -->
+    <main id="page-landing" class="page active">
+        <div class="pt-grid" id="pt-grid"></div>
+        <h2 style="margin-bottom: 15px; font-size: 1.2rem;">퀴즈 선택</h2>
+        <div class="menu-grid">
+            <div class="menu-card" onclick="startQuizInit('A')">
+                <h3>모드 A</h3><p>원소로 n주기 m족 맞히기</p>
+            </div>
+            <div class="menu-card" onclick="openModal('B')">
+                <h3>모드 B</h3><p>n주기 m족으로 원소 맞히기</p>
+            </div>
+            <div class="menu-card" onclick="openModal('C')">
+                <h3>모드 C</h3><p>원소 번호로 원소 맞히기</p>
+            </div>
+            <div class="menu-card" onclick="startQuizInit('D')">
+                <h3>모드 D</h3><p>원소로 원소 번호 맞히기</p>
+            </div>
+            <div class="menu-card" onclick="startQuizInit('E')">
+                <h3>모드 E</h3><p>원소 번호로 n주기 m족 맞히기</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- 퀴즈 진행 페이지 -->
+    <main id="page-quiz" class="page">
+        <div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px; color: var(--text-muted);">
+                <span id="quiz-mode-title">모드 진행중</span>
+                <span id="quiz-progress-text">1 / 10</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 10%;"></div></div>
+        </div>
+        <div class="question-area" id="question-text">문제 로딩중...</div>
+        <div class="input-area" id="input-area"></div>
+    </main>
+
+    <!-- 결과 페이지 -->
+    <main id="page-result" class="page">
+        <div class="result-container">
+            <div class="score-board">
+                <h2>최종 점수</h2>
+                <div class="score-text" id="final-score">100</div>
+                <button class="action-btn" onclick="goHome()">메인으로 돌아가기</button>
+            </div>
+            <div class="review-list" id="review-list"></div>
+        </div>
+    </main>
+</div>
+
+<!-- 모드 B/C 진입 전 선택 모달 -->
+<div class="modal-overlay" id="selection-modal">
+    <div class="modal-content">
+        <h3 style="margin-bottom: 10px;">입력 방식 선택</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">어떤 방식으로 풀고 싶으신가요?</p>
+        <button class="modal-btn" onclick="startQuizWithOption('text')">직접 입력 (주관식)</button>
+        <button class="modal-btn" onclick="startQuizWithOption('mcq')">객관식 (5지 선다)</button>
+        <button class="modal-btn" style="background: var(--border); color: var(--text-color);" onclick="closeModal()">취소</button>
+    </div>
+</div>
+
+<script>
+    // 1. 원소 데이터 (1~20번)
+    const elementsData = [
+        { id: 1, sym: 'H', name: '수소', p: 1, g: 1, type: 'nonmetal', col: 1 },
+        { id: 2, sym: 'He', name: '헬륨', p: 1, g: 18, type: 'noble', col: 8 },
+        { id: 3, sym: 'Li', name: '리튬', p: 2, g: 1, type: 'metal', col: 1 },
+        { id: 4, sym: 'Be', name: '베릴륨', p: 2, g: 2, type: 'metal', col: 2 },
+        { id: 5, sym: 'B', name: '붕소', p: 2, g: 13, type: 'metalloid', col: 3 },
+        { id: 6, sym: 'C', name: '탄소', p: 2, g: 14, type: 'nonmetal', col: 4 },
+        { id: 7, sym: 'N', name: '질소', p: 2, g: 15, type: 'nonmetal', col: 5 },
+        { id: 8, sym: 'O', name: '산소', p: 2, g: 16, type: 'nonmetal', col: 6 },
+        { id: 9, sym: 'F', name: '플루오린', p: 2, g: 17, type: 'nonmetal', col: 7 },
+        { id: 10, sym: 'Ne', name: '네온', p: 2, g: 18, type: 'noble', col: 8 },
+        { id: 11, sym: 'Na', name: '나트륨', p: 3, g: 1, type: 'metal', col: 1 },
+        { id: 12, sym: 'Mg', name: '마그네슘', p: 3, g: 2, type: 'metal', col: 2 },
+        { id: 13, sym: 'Al', name: '알루미늄', p: 3, g: 13, type: 'metal', col: 3 },
+        { id: 14, sym: 'Si', name: '규소', p: 3, g: 14, type: 'metalloid', col: 4 },
+        { id: 15, sym: 'P', name: '인', p: 3, g: 15, type: 'nonmetal', col: 5 },
+        { id: 16, sym: 'S', name: '황', p: 3, g: 16, type: 'nonmetal', col: 6 },
+        { id: 17, sym: 'Cl', name: '염소', p: 3, g: 17, type: 'nonmetal', col: 7 },
+        { id: 18, sym: 'Ar', name: '아르곤', p: 3, g: 18, type: 'noble', col: 8 },
+        { id: 19, sym: 'K', name: '칼륨', p: 4, g: 1, type: 'metal', col: 1 },
+        { id: 20, sym: 'Ca', name: '칼슘', p: 4, g: 2, type: 'metal', col: 2 }
+    ];
+
+    // 상태 관리
+    let currentMode = '';
+    let pendingMode = '';
+    let subOption = ''; 
+    let quizQueue = [];
+    let currentIndex = 0;
+    let results = []; 
+    let activeBoxId = 'box1'; 
+
+    // 테마 설정
+    const themeSelect = document.getElementById('themeSelect');
+    const htmlEl = document.documentElement;
+    themeSelect.addEventListener('change', (e) => {
+        htmlEl.setAttribute('data-theme', e.target.value);
+    });
+
+    // 주기율표 렌더링
+    function renderPeriodicTable() {
+        const grid = document.getElementById('pt-grid');
+        grid.innerHTML = '';
+        elementsData.forEach(el => {
+            const div = document.createElement('div');
+            div.className = `element-box ${el.type}`;
+            div.style.gridColumn = el.col;
+            div.style.gridRow = el.p;
+            div.innerHTML = `
+                <span class="el-num">${el.id}</span>
+                <span class="el-sym">${el.sym}</span>
+                <span class="el-name">${el.name}</span>
+                <div class="tooltip">${el.p}주기 ${el.g}족<br>${el.name} (${el.sym})</div>
+            `;
+            grid.appendChild(div);
+        });
+    }
+
+    // 화면 전환 및 홈 복귀 기능
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(`page-${pageId}`).classList.add('active');
+        
+        const homeBtn = document.getElementById('home-btn');
+        if(pageId === 'landing') {
+            renderPeriodicTable();
+            homeBtn.style.display = 'none'; // 랜딩에서는 숨김
+        } else {
+            homeBtn.style.display = 'block'; // 퀴즈/결과 화면에서는 보임
+        }
+    }
+
+    function goHome() {
+        showPage('landing');
+        currentMode = '';
+    }
+
+    function openModal(mode) { pendingMode = mode; document.getElementById('selection-modal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('selection-modal').style.display = 'none'; pendingMode = ''; }
+    
+    function startQuizWithOption(opt) { 
+        subOption = opt; 
+        const modeToStart = pendingMode; // 모달이 닫히며 삭제되기 전에 모드 백업
+        closeModal(); 
+        startQuizInit(modeToStart); 
+    }
+    
+    function shuffle(array) { return array.sort(() => Math.random() - 0.5); }
+
+    function startQuizInit(mode) {
+        currentMode = mode;
+        currentIndex = 0;
+        results = [];
+        quizQueue = shuffle([...elementsData]).slice(0, 10);
+        document.getElementById('quiz-mode-title').innerText = `모드 ${mode}`;
+        showPage('quiz');
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        const el = quizQueue[currentIndex];
+        const qText = document.getElementById('question-text');
+        const inputArea = document.getElementById('input-area');
+        inputArea.innerHTML = ''; // 화면 초기화 필수!
+
+        document.getElementById('quiz-progress-text').innerText = `${currentIndex + 1} / 10`;
+        document.getElementById('progress-fill').style.width = `${((currentIndex) / 10) * 100}%`;
+
+        if (currentMode === 'A') { 
+            qText.innerText = `${el.name}(${el.sym})는 몇 주기, 몇 족일까요?`;
+            inputArea.innerHTML = `
+                <div class="box-input-group">
+                    <div class="box-input active" id="box1" onclick="setActiveBox('box1')"></div> 주기
+                    <div class="box-input" id="box2" onclick="setActiveBox('box2')"></div> 족
+                </div>
+                <div class="numpad">
+                    ${[1,2,3,4,5,6,7,8,9].map(n => `<button onclick="typeNum('${n}')">${n}</button>`).join('')}
+                    <button onclick="clearBox()">지움</button>
+                    <button onclick="typeNum('0')">0</button>
+                    <button class="wide" style="grid-column: span 1; background:var(--primary); color:white;" onclick="submitModeA()">입력 완료</button>
+                </div>
+            `;
+            activeBoxId = 'box1';
+        } 
+        else if (currentMode === 'B') { 
+            qText.innerText = `${el.p}주기 ${el.g}족에 해당하는 원소는?`;
+            renderMCQorText(el, ['name', 'sym']);
+        }
+        else if (currentMode === 'C') { 
+            qText.innerText = `원자 번호 ${el.id}번 원소는?`;
+            renderMCQorText(el, ['name', 'sym']);
+        }
+        else if (currentMode === 'D') { 
+            qText.innerText = `${el.name}(${el.sym})의 원자 번호는?`;
+            inputArea.innerHTML = `
+                <div class="box-input-group">
+                    <div class="box-input active" id="box1" style="width:100px;"></div>
+                </div>
+                <div class="numpad">
+                    ${[1,2,3,4,5,6,7,8,9].map(n => `<button onclick="typeNumConcat('${n}')">${n}</button>`).join('')}
+                    <button onclick="clearBoxConcat()">지움</button>
+                    <button onclick="typeNumConcat('0')">0</button>
+                    <button class="wide" style="grid-column: span 1; background:var(--primary); color:white;" onclick="submitModeD()">완료</button>
+                </div>
+            `;
+        }
+        else if (currentMode === 'E') { 
+            qText.innerText = `원자 번호 ${el.id}번은 몇 주기, 몇 족일까요?`;
+            inputArea.innerHTML = `
+                <div class="box-input-group">
+                    <select id="sel-period" class="std-select">
+                        <option value="">주기 선택</option>
+                        ${[1,2,3,4].map(n => `<option value="${n}">${n}주기</option>`).join('')}
+                    </select>
+                    <select id="sel-group" class="std-select">
+                        <option value="">족 선택</option>
+                        ${[1,2,13,14,15,16,17,18].map(n => `<option value="${n}">${n}족</option>`).join('')}
+                    </select>
+                </div>
+                <button class="action-btn" onclick="submitModeE()">제출하기</button>
+            `;
+        }
+    }
+
+    function renderMCQorText(correctEl, checkFields) {
+        const inputArea = document.getElementById('input-area');
+        
+        if (subOption === 'mcq') {
+            // 오답 4개 랜덤 추출
+            let options = shuffle(elementsData.filter(e => e.id !== correctEl.id)).slice(0, 4);
+            // 정답 포함 후 다시 셔플
+            options.push(correctEl);
+            options = shuffle(options);
+            
+            let html = `<div style="display:flex; flex-direction:column; gap:10px; width:100%; max-width:300px;">`;
+            options.forEach(opt => {
+                html += `<button class="mcq-btn" onclick="submitMCQ('${opt.name}')">${opt.name} (${opt.sym})</button>`;
+            });
+            html += `</div>`;
+            inputArea.innerHTML = html;
+        } else if (subOption === 'text') {
+            // 주관식 입력 렌더링
+            inputArea.innerHTML = `
+                <input type="text" id="text-ans" class="std-input" placeholder="원소 기호 또는 이름 입력" autocomplete="off" autofocus>
+                <button class="action-btn" onclick="submitText()">제출하기</button>
+            `;
+            // 엔터키 지원 (setTimeout으로 렌더링 후 이벤트 할당)
+            setTimeout(() => {
+                const textInput = document.getElementById('text-ans');
+                if (textInput) {
+                    textInput.focus();
+                    textInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') submitText();
+                    });
+                }
+            }, 50);
+        }
+    }
+
+    function setActiveBox(id) {
+        document.querySelectorAll('.box-input').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        activeBoxId = id;
+    }
+    
+    function typeNum(n) {
+        const box = document.getElementById(activeBoxId);
+        if(box) {
+            if (activeBoxId === 'box1') {
+                box.innerText = n;
+                if(document.getElementById('box2')) setActiveBox('box2');
+            } else if (activeBoxId === 'box2') {
+                if (box.innerText.length < 2) box.innerText += n;
+            }
+        }
+    }
+    
+    function clearBox() {
+        const box = document.getElementById(activeBoxId);
+        if(box) {
+            if(activeBoxId === 'box2' && box.innerText.length > 0) {
+                box.innerText = box.innerText.slice(0, -1);
+            } else {
+                box.innerText = '';
+                if(activeBoxId === 'box2') setActiveBox('box1');
+            }
+        }
+    }
+
+    function typeNumConcat(n) {
+        const box = document.getElementById('box1');
+        if(box.innerText.length < 2) box.innerText += n;
+    }
+    function clearBoxConcat() { document.getElementById('box1').innerText = ''; }
+
+    function flashFeedback(isCorrect) {
+        const body = document.getElementById('app-body');
+        body.classList.add(isCorrect ? 'flash-correct' : 'flash-incorrect');
+        setTimeout(() => {
+            body.classList.remove('flash-correct', 'flash-incorrect');
+            nextQuestion();
+        }, 500);
+    }
+
+    function recordResult(qText, myAns, correctAns, isCorrect) {
+        results.push({ qText, myAns, correctAns, isCorrect });
+        flashFeedback(isCorrect);
+    }
+
+    function submitModeA() {
+        const p = document.getElementById('box1').innerText;
+        const g = document.getElementById('box2').innerText;
+        if(!p || !g) return;
+        
+        const el = quizQueue[currentIndex];
+        let inputGroup = parseInt(g);
+        let correctGroup = el.g;
+        
+        // 편의 기능 유지: 13~18족을 한 자리(3~8)로 입력해도 정답 허용
+        if (correctGroup >= 13 && inputGroup < 10) {
+            inputGroup += 10; 
+        }
+
+        const isCorrect = (parseInt(p) === el.p && inputGroup === correctGroup);
+        recordResult(`${el.name}의 주기/족`, `${p}주기 ${g}족`, `${el.p}주기 ${el.g}족`, isCorrect);
+    }
+
+    function submitMCQ(ansName) {
+        const el = quizQueue[currentIndex];
+        const isCorrect = (ansName === el.name);
+        const qText = currentMode === 'B' ? `${el.p}주기 ${el.g}족` : `원자 번호 ${el.id}번`;
+        recordResult(qText, ansName, el.name, isCorrect);
+    }
+
+    function submitText() {
+        const textInput = document.getElementById('text-ans');
+        if(!textInput) return;
+        const val = textInput.value.trim().toLowerCase();
+        if(!val) return;
+        
+        const el = quizQueue[currentIndex];
+        const isCorrect = (val === el.name.toLowerCase() || val === el.sym.toLowerCase());
+        const qText = currentMode === 'B' ? `${el.p}주기 ${el.g}족` : `원자 번호 ${el.id}번`;
+        recordResult(qText, val, `${el.name}(${el.sym})`, isCorrect);
+    }
+
+    function submitModeD() {
+        const val = document.getElementById('box1').innerText;
+        if(!val) return;
+        const el = quizQueue[currentIndex];
+        const isCorrect = (parseInt(val) === el.id);
+        recordResult(`${el.name}의 번호`, val, el.id, isCorrect);
+    }
+
+    function submitModeE() {
+        const p = document.getElementById('sel-period').value;
+        const g = document.getElementById('sel-group').value;
+        if(!p || !g) return;
+        const el = quizQueue[currentIndex];
+        const isCorrect = (parseInt(p) === el.p && parseInt(g) === el.g);
+        recordResult(`${el.id}번 주기/족`, `${p}주기 ${g}족`, `${el.p}주기 ${el.g}족`, isCorrect);
+    }
+
+    function nextQuestion() {
+        currentIndex++;
+        if(currentIndex >= 10) {
+            document.getElementById('progress-fill').style.width = `100%`;
+            setTimeout(showResult, 300);
+        } else {
+            renderQuestion();
+        }
+    }
+
+    function showResult() {
+        const correctCount = results.filter(r => r.isCorrect).length;
+        document.getElementById('final-score').innerText = correctCount * 10;
+        
+        const listHtml = results.map((r, i) => `
+            <div class="review-item ${r.isCorrect ? 'correct-item' : ''}">
+                <div style="text-align: left;">
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Q${i+1}. ${r.qText}</div>
+                    <div style="font-weight: bold; margin-top: 5px;">
+                        <span style="color: ${r.isCorrect ? 'var(--correct)' : 'var(--incorrect)'}; text-decoration: ${r.isCorrect ? 'none' : 'line-through'};">${r.myAns}</span>
+                        ${!r.isCorrect ? `<span style="color: var(--correct); margin-left:10px;">정답: ${r.correctAns}</span>` : ''}
+                    </div>
+                </div>
+                <div style="font-size:1.5rem;">${r.isCorrect ? '⭕' : '❌'}</div>
+            </div>
+        `).join('');
+        
+        document.getElementById('review-list').innerHTML = listHtml;
+        showPage('result');
+    }
+
+    window.onload = () => {
+        renderPeriodicTable();
+    };
+</script>
+</body>
+</html>
