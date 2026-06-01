@@ -58,7 +58,10 @@
                     <p class="text-xs text-stone-400 mt-0.5">Opera Master Challenge</p>
                 </div>
             </div>
-            <div class="text-right">
+            <div class="text-right flex items-center gap-3">
+                <span id="pool-counter" class="text-xs bg-stone-900 border border-stone-800 px-3 py-1.5 rounded-full text-stone-400">
+                    남은 곡: 17
+                </span>
                 <span id="mastery-counter" class="text-xs bg-opera-velvet text-opera-gold border border-opera-gold/30 px-3 py-1.5 rounded-full font-bold">
                     달성도: 0 / 17
                 </span>
@@ -76,8 +79,8 @@
                 <p class="text-opera-gold text-xs tracking-widest uppercase mb-2 font-bold">The Ultimate Classical Playlist</p>
                 <h2 class="text-2xl md:text-3xl font-bold mb-3 text-stone-100">위대한 오페라의 세계로 초대합니다</h2>
                 <p class="text-sm text-stone-300 max-w-xl mx-auto leading-relaxed">
-                    1번부터 17번까지 정교하게 큐레이션된 명작 리스트가 숨겨져 있습니다.<br>
-                    아래 버튼을 눌러 임의의 오페라를 추천받고 마스터에 도전해 보세요!
+                    지정된 17개의 명작 컬렉션이 무대 뒤에 준비되어 있습니다.<br>
+                    <strong>비복원 추출</strong>을 통해 중복 없이 모든 명작을 골고루 감상하고 오페라 마스터에 도달해 보세요!
                 </p>
             </div>
         </section>
@@ -93,7 +96,7 @@
                     </svg>
                     오페라 임의 추출하기
                 </button>
-                <p class="text-xs text-stone-500 mt-3">클릭 시 1~17 사이의 인덱스를 무작위로 추첨합니다.</p>
+                <p class="text-xs text-stone-500 mt-3">아직 보지 않은 영상 중 1개가 무작위로 추첨됩니다.</p>
             </div>
 
             <!-- 극장 프레임 (영상 로딩/안내 영역) -->
@@ -122,7 +125,7 @@
                     <div id="stage-placeholder" class="flex flex-col items-center gap-4 py-8">
                         <div class="text-6xl animate-bounce">🎭</div>
                         <h3 class="text-xl font-bold text-stone-300">현재 무대가 비어 있습니다</h3>
-                        <p class="text-sm text-stone-500 max-w-xs">상단의 '임의 추출' 버튼을 누르면 웅장한 오페라 영상이 이곳에 임베드됩니다.</p>
+                        <p class="text-sm text-stone-500 max-w-xs">상단의 '임의 추출' 버튼을 누르면 아름다운 오페라가 시작됩니다.</p>
                     </div>
 
                     <!-- 유튜브 iframe (처음에는 숨김) -->
@@ -135,12 +138,12 @@
         <section class="bg-opera-cardBg border border-stone-800 rounded-2xl p-6 shadow-xl">
             <div class="flex items-center justify-between mb-4 border-b border-stone-800 pb-3">
                 <h3 class="text-lg font-bold text-stone-200 flex items-center gap-2">
-                    <span>👑</span> 오페라 컬렉션 보드
+                    <span>👑</span> 오페라 마스터리 상태판
                 </h3>
-                <button id="reset-history" class="text-xs text-stone-500 hover:text-opera-gold transition">기록 초기화</button>
+                <button id="reset-history" class="text-xs bg-stone-900 border border-stone-800 hover:border-red-900 hover:text-red-400 px-3 py-1.5 rounded-lg text-stone-400 transition-all font-semibold">전체 초기화</button>
             </div>
             <p class="text-xs text-stone-400 mb-6 leading-relaxed">
-                각 번호를 클릭하면 수동으로 감상 완료 상태로 마킹할 수 있으며, 랜덤 추출 시 해당 번호가 자동으로 감상 완료 리스트에 체크됩니다.
+                각 번호판은 현재까지의 시청 완료 여부를 시각화합니다. 이미 시청한 번호는 비복원 풀에서 제외되며, 17개 곡을 모두 마스터하면 다시 새롭게 대기열이 갱신됩니다.
             </p>
 
             <div class="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-9 gap-3" id="mastery-grid">
@@ -162,10 +165,28 @@
 
     <!-- 스크립트 기능 처리 -->
     <script>
-        // 상수 정의
-        const BASE_YOUTUBE_WATCH_URL = "https://www.youtube.com/watch?v=G1YS61pu8Rc&list=PLpEH6n3bBnA9j7Y08temu5DQO9qyUIpeI";
-        const BASE_YOUTUBE_EMBED_URL = "https://www.youtube.com/embed/G1YS61pu8Rc?list=PLpEH6n3bBnA9j7Y08temu5DQO9qyUIpeI";
-        const TOTAL_INDEX = 17;
+        // 지정된 17개 고유 비디오 ID 리스트 (1~17 순서 대응)
+        const OPERA_VIDEO_IDS = [
+            "AZsej47Yb34",  // 1
+            "V_r8ywTUICY",  // 2
+            "DydDfUh1Rr0",  // 3
+            "4v5e66d4yf0",  // 4
+            "qfZ5zecyb5I",  // 5
+            "G1YS61pu8Rc",  // 6
+            "jRJFKpUSpYw",  // 7
+            "SaBzNtvjI",    // 8
+            "LpW-g7zsCJI",  // 9
+            "OGoNdNl-rys",  // 10
+            "GE7UPz66MQY",  // 11
+            "YF9OHBdyxeE",  // 12
+            "SrQV5x1sczs",  // 13
+            "d88tduoKTj4",  // 14
+            "wOyUNQ6bM3U",  // 15
+            "-6-_6dgsonk",  // 16
+            "nRy8B4mm6rs"   // 17
+        ];
+
+        const TOTAL_INDEX = OPERA_VIDEO_IDS.length;
 
         // DOM 요소 캐싱
         const extractBtn = document.getElementById('extract-btn');
@@ -176,17 +197,42 @@
         const youtubeIframe = document.getElementById('youtube-iframe');
         const masteryGrid = document.getElementById('mastery-grid');
         const masteryCounter = document.getElementById('mastery-counter');
+        const poolCounter = document.getElementById('pool-counter');
         const resetHistoryBtn = document.getElementById('reset-history');
         const toastMessage = document.getElementById('toast-message');
         const toastText = document.getElementById('toast-text');
 
-        // 상태 관리 (로컬스토리지를 연동해 새로고침해도 완독 기록 보존)
-        let masteredIndexes = JSON.parse(localStorage.getItem('opera_mastery')) || [];
+        // 상태 관리 (로컬스토리지를 연동)
+        // masteredIndexes: 감상 완료된 실제 인덱스 (1~17)
+        let masteredIndexes = JSON.parse(localStorage.getItem('opera_mastery_v2')) || [];
+        // remainingPool: 비복원 추출을 위해 남아있는 인덱스 (1~17)
+        let remainingPool = JSON.parse(localStorage.getItem('opera_pool_v2')) || [];
 
         // 초기 화면 설정 및 마스터 보드 빌드
         function init() {
+            // 만약 처음 접속했거나 풀과 완료 정보가 꼬여있다면 풀 초기화
+            if (remainingPool.length === 0 && masteredIndexes.length < TOTAL_INDEX) {
+                resetPool();
+            }
             buildMasteryGrid();
-            updateMasteryCounter();
+            updateStateUI();
+        }
+
+        // 비복원 추출 대기 풀 리셋 (완료하지 않은 것만 남겨놓기)
+        function resetPool() {
+            remainingPool = [];
+            for (let i = 1; i <= TOTAL_INDEX; i++) {
+                if (!masteredIndexes.includes(i)) {
+                    remainingPool.push(i);
+                }
+            }
+            // 모든 곡을 다 본 상태에서 다시 리셋하는 경우는 풀 전체를 복구
+            if (remainingPool.length === 0) {
+                for (let i = 1; i <= TOTAL_INDEX; i++) {
+                    remainingPool.push(i);
+                }
+            }
+            saveState();
         }
 
         // 17개 타일 그리드 동적 생성
@@ -195,37 +241,66 @@
             for (let i = 1; i <= TOTAL_INDEX; i++) {
                 const isMastered = masteredIndexes.includes(i);
                 
-                const tile = document.createElement('button');
+                const tile = document.createElement('div');
                 tile.id = `tile-${i}`;
                 tile.className = `p-3 rounded-lg border text-center font-bold text-sm transition-all flex flex-col items-center justify-center gap-1 ${
                     isMastered 
                     ? 'bg-opera-velvet border-opera-gold text-opera-gold shadow-md' 
-                    : 'bg-stone-900 border-stone-800 text-stone-500 hover:border-stone-700 hover:text-stone-300'
+                    : 'bg-stone-900 border-stone-800 text-stone-500'
                 }`;
                 
                 tile.innerHTML = `
-                    <span class="text-[10px] uppercase block tracking-wider ${isMastered ? 'text-opera-gold/80' : 'text-stone-600'}">No.</span>
+                    <span class="text-[10px] uppercase block tracking-wider ${isMastered ? 'text-opera-gold/80' : 'text-stone-600'}">Index</span>
                     <span class="text-base">${i}</span>
                 `;
 
-                // 개별 타일 클릭 시 완료 상태 토글 가능
-                tile.addEventListener('click', () => toggleMastery(i));
                 masteryGrid.appendChild(tile);
             }
         }
 
-        // 특정 인덱스 감상 완료 토글
-        function toggleMastery(index) {
-            if (masteredIndexes.includes(index)) {
-                masteredIndexes = masteredIndexes.filter(item => item !== index);
-                showToast(`인덱스 #${index}번이 완료 목록에서 제외되었습니다.`);
+        // 전체 UI 정보 갱신
+        function updateStateUI() {
+            // 달성도 갱신
+            masteryCounter.innerText = `달성도: ${masteredIndexes.length} / ${TOTAL_INDEX}`;
+            if (masteredIndexes.length === TOTAL_INDEX) {
+                masteryCounter.className = "text-xs bg-yellow-500 text-stone-950 border border-yellow-300 px-3 py-1.5 rounded-full font-bold animate-pulse";
+                masteryCounter.innerText = "👑 오페라 마스터!";
             } else {
-                masteredIndexes.push(index);
-                showToast(`축하합니다! #${index}번 오페라를 완료하셨습니다. 🎓`);
+                masteryCounter.className = "text-xs bg-opera-velvet text-opera-gold border border-opera-gold/30 px-3 py-1.5 rounded-full font-bold";
             }
+
+            // 남은 대기 목록 카운트 갱신
+            poolCounter.innerText = `남은 곡: ${remainingPool.length}`;
+        }
+
+        // 특정 인덱스 감상 완료 및 타일 업데이트
+        function markAsMastered(index) {
+            if (!masteredIndexes.includes(index)) {
+                masteredIndexes.push(index);
+            }
+            
+            // 비복원 풀에서 사용한 인덱스 제거
+            remainingPool = remainingPool.filter(item => item !== index);
+
+            // 풀이 다 닳았을 때의 처리
+            if (remainingPool.length === 0) {
+                // 모두 본 경우 대기 풀을 새로고침
+                setTimeout(() => {
+                    if (masteredIndexes.length === TOTAL_INDEX) {
+                        showToast("축하합니다! 17개의 모든 오페라를 마스터하셨습니다! 처음부터 다시 시작합니다. 🎓");
+                        masteredIndexes = []; // 완료 히스토리 리셋
+                    } else {
+                        showToast("비복원 추천 사이클이 완료되어 풀을 재설정합니다.");
+                    }
+                    resetPool();
+                    buildMasteryGrid();
+                    updateStateUI();
+                }, 2000);
+            }
+
             saveState();
-            updateMasteryCounter();
             updateTileUI(index);
+            updateStateUI();
         }
 
         // 단일 타일 상태 UI 업데이트
@@ -238,26 +313,15 @@
                 tile.className = 'p-3 rounded-lg border text-center font-bold text-sm transition-all flex flex-col items-center justify-center gap-1 bg-opera-velvet border-opera-gold text-opera-gold shadow-md';
                 tile.querySelector('span').className = 'text-[10px] uppercase block tracking-wider text-opera-gold/80';
             } else {
-                tile.className = 'p-3 rounded-lg border text-center font-bold text-sm transition-all flex flex-col items-center justify-center gap-1 bg-stone-900 border-stone-800 text-stone-500 hover:border-stone-700 hover:text-stone-300';
+                tile.className = 'p-3 rounded-lg border text-center font-bold text-sm transition-all flex flex-col items-center justify-center gap-1 bg-stone-900 border-stone-800 text-stone-500';
                 tile.querySelector('span').className = 'text-[10px] uppercase block tracking-wider text-stone-600';
-            }
-        }
-
-        // 달성도 카운터 업데이트
-        function updateMasteryCounter() {
-            masteryCounter.innerText = `달성도: ${masteredIndexes.length} / ${TOTAL_INDEX}`;
-            
-            if (masteredIndexes.length === TOTAL_INDEX) {
-                masteryCounter.className = "text-xs bg-yellow-500 text-stone-950 border border-yellow-300 px-3 py-1.5 rounded-full font-bold animate-pulse";
-                masteryCounter.innerText = "👑 오페라 마스터 등극!";
-            } else {
-                masteryCounter.className = "text-xs bg-opera-velvet text-opera-gold border border-opera-gold/30 px-3 py-1.5 rounded-full font-bold";
             }
         }
 
         // 데이터 로컬 저장
         function saveState() {
-            localStorage.setItem('opera_mastery', JSON.stringify(masteredIndexes));
+            localStorage.setItem('opera_mastery_v2', JSON.stringify(masteredIndexes));
+            localStorage.setItem('opera_pool_v2', JSON.stringify(remainingPool));
         }
 
         // 커스텀 토스트 메시지 띄우기
@@ -267,49 +331,52 @@
             
             setTimeout(() => {
                 toastMessage.style.opacity = '0';
-            }, 2500);
+            }, 3000);
         }
 
-        // 임의 추출 작동 로직
+        // 비복원 기반 임의 추출 작동 로직
         function drawRandomOpera() {
-            // 버튼 비활성화 및 간단한 휠 애니메이션 시각효과 부여
+            // 혹시라도 남아있는 대기열이 비었다면 복구
+            if (remainingPool.length === 0) {
+                resetPool();
+                updateStateUI();
+            }
+
+            // 버튼 비활성화 및 휠 애니메이션 시각효과 부여
             extractBtn.disabled = true;
             extractBtn.innerHTML = `
                 <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-stone-950" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                명작 무대 선정 중...
+                명작 추첨 중...
             `;
 
             setTimeout(() => {
-                // 1부터 17까지 자연수 추출
-                const randomIndex = Math.floor(Math.random() * TOTAL_INDEX) + 1;
+                // 비복원 풀(remainingPool)에서 랜덤으로 인덱스 하나 선정
+                const randomPoolIndex = Math.floor(Math.random() * remainingPool.length);
+                const chosenIndex = remainingPool[randomPoolIndex]; // 1~17 사이의 숫자 중 하나
+
+                // 선택된 인덱스에 해당하는 유튜브 비디오 ID 가져오기
+                const videoId = OPERA_VIDEO_IDS[chosenIndex - 1];
 
                 // 유튜브 소스 완성 (Iframe 및 다이렉트 링크 전용)
-                const targetEmbedUrl = `${BASE_YOUTUBE_EMBED_URL}&index=${randomIndex}`;
-                const targetWatchUrl = `${BASE_YOUTUBE_WATCH_URL}&index=${randomIndex}`;
+                const targetEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+                const targetWatchUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
                 // 영상 및 상태 변경
                 youtubeIframe.src = targetEmbedUrl;
                 youtubeIframe.classList.remove('hidden');
                 stagePlaceholder.classList.add('hidden');
 
-                // 패널 정보 노출
+                // 상단 상태 정보 노출
                 statusPanel.classList.remove('hidden');
-                drawnIndexText.innerText = `현재 추천 명작 : 오페라 리스트 #${randomIndex}번 영상`;
+                drawnIndexText.innerText = `추출 명작 : 오페라 리스트 #${chosenIndex}번 영상`;
                 externalLink.href = targetWatchUrl;
 
-                // 해당 인덱스 아직 미감상 상태였다면 자동으로 체크해줌
-                if (!masteredIndexes.includes(randomIndex)) {
-                    masteredIndexes.push(randomIndex);
-                    saveState();
-                    updateMasteryCounter();
-                    updateTileUI(randomIndex);
-                    showToast(`#${randomIndex}번 신작이 무대에 올랐습니다! 🎉`);
-                } else {
-                    showToast(`#${randomIndex}번 영상으로 다시 매칭되었습니다. 🔄`);
-                }
+                // 감상 상태로 기록 및 대기 풀에서 제거
+                markAsMastered(chosenIndex);
+                showToast(`#${chosenIndex}번 명곡이 무대에 매칭되었습니다! 🎉`);
 
                 // 버튼 복구
                 extractBtn.disabled = false;
@@ -317,18 +384,26 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" />
                     </svg>
-                    오페라 다시 추출하기
+                    오페라 다음 곡 추출하기
                 `;
-            }, 800); // 0.8초의 긴장감 넘치는 지연 효과
+            }, 800); // 극적 지연 연출
         }
 
-        // 기록 초기화
+        // 전체 초기화 (히스토리 및 남은 대기열 리셋)
         resetHistoryBtn.addEventListener('click', () => {
-            if (confirm('오페라 마스터 달성도를 전부 초기화하시겠습니까?')) {
+            const container = document.createElement('div');
+            // 사용자 확인 모달 대체 (confirm 사용 지양에 근거하여 브라우저 확인창 사용하되 부드러운 알림 지원)
+            if (confirm('모든 기록 및 비복원 추출 목록을 초기화하고 처음부터 다시 시작하시겠습니까?')) {
                 masteredIndexes = [];
-                saveState();
+                remainingPool = [];
+                
+                // 로컬 저장소 완전 파기 및 재설정
+                localStorage.removeItem('opera_mastery_v2');
+                localStorage.removeItem('opera_pool_v2');
+
+                resetPool();
                 buildMasteryGrid();
-                updateMasteryCounter();
+                updateStateUI();
                 
                 // 로드되어 있는 영상 초기화
                 youtubeIframe.src = '';
@@ -336,7 +411,7 @@
                 stagePlaceholder.classList.remove('hidden');
                 statusPanel.classList.add('hidden');
                 
-                showToast('감상 달성도가 완전히 리셋되었습니다.');
+                showToast('대기열과 달성도가 초기화되었습니다. 처음부터 다시 시작합니다.');
             }
         });
 
