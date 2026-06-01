@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오페라 마스터 도전! 🎭</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        opera: {
+                            gold: '#D4AF37',
+                            goldHover: '#AA8811',
+                            velvet: '#5C0612',
+                            velvetDark: '#2E0309',
+                            darkBg: '#120D0E',
+                            cardBg: '#1A1415'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['Playfair Display', 'Georgia', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Noto+Serif+KR:wght@200..900&display=swap');
+        
+        body {
+            font-family: 'Noto Serif KR', 'Playfair Display', serif;
+            background-color: #120D0E;
+        }
+
+        /* 벨벳 질감 그라데이션 */
+        .velvet-gradient {
+            background: radial-gradient(circle at top, #5c0612 0%, #1a0205 100%);
+        }
+        
+        /* 금빛 테두리 글로우 효과 */
+        .gold-glow:hover {
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+        }
+    </style>
+</head>
+<body class="text-stone-200 min-h-screen flex flex-col justify-between">
+
+    <!-- 상단 헤더 -->
+    <header class="border-b border-opera-gold/20 py-6 px-4 bg-opera-darkBg/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">🎭</span>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-opera-gold tracking-widest uppercase">오페라 마스터 도전!</h1>
+                    <p class="text-xs text-stone-400 mt-0.5">Opera Master Challenge</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <span id="mastery-counter" class="text-xs bg-opera-velvet text-opera-gold border border-opera-gold/30 px-3 py-1.5 rounded-full font-bold">
+                    달성도: 0 / 17
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 레이아웃 -->
+    <main class="flex-grow max-w-4xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6">
+        
+        <!-- 인트로 소개 정보 -->
+        <section class="velvet-gradient rounded-2xl border border-opera-gold/30 p-6 text-center shadow-2xl relative overflow-hidden">
+            <div class="absolute inset-0 bg-[radial-gradient(#d4af37_1px,transparent_1px)] [background-size:16px_16px] opacity-5"></div>
+            <div class="relative z-10">
+                <p class="text-opera-gold text-xs tracking-widest uppercase mb-2 font-bold">The Ultimate Classical Playlist</p>
+                <h2 class="text-2xl md:text-3xl font-bold mb-3 text-stone-100">위대한 오페라의 세계로 초대합니다</h2>
+                <p class="text-sm text-stone-300 max-w-xl mx-auto leading-relaxed">
+                    1번부터 17번까지 정교하게 큐레이션된 명작 리스트가 숨겨져 있습니다.<br>
+                    아래 버튼을 눌러 임의의 오페라를 추천받고 마스터에 도전해 보세요!
+                </p>
+            </div>
+        </section>
+
+        <!-- 핵심 작동부: 추출 버튼 및 미디어 영역 -->
+        <section class="bg-opera-cardBg border border-stone-800 rounded-2xl p-6 shadow-xl flex flex-col items-center">
+            
+            <!-- 추출 트리거 버튼 -->
+            <div class="w-full max-w-sm mb-8 text-center">
+                <button id="extract-btn" class="w-full bg-gradient-to-r from-opera-gold to-yellow-600 text-stone-950 font-bold py-4 px-8 rounded-full shadow-lg text-lg tracking-wider transition-all duration-300 transform active:scale-95 hover:scale-[1.02] gold-glow flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 animate-spin-slow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" />
+                    </svg>
+                    오페라 임의 추출하기
+                </button>
+                <p class="text-xs text-stone-500 mt-3">클릭 시 1~17 사이의 인덱스를 무작위로 추첨합니다.</p>
+            </div>
+
+            <!-- 극장 프레임 (영상 로딩/안내 영역) -->
+            <div class="w-full">
+                <!-- 현재 추출 정보 패널 -->
+                <div id="status-panel" class="hidden mb-4 bg-opera-velvetDark/50 border border-opera-velvet/50 rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl">🎫</span>
+                        <div>
+                            <span class="text-xs text-opera-gold font-bold block">CURRENT SELECTION</span>
+                            <span id="drawn-index-text" class="text-lg font-bold text-white">추출된 인덱스: #0</span>
+                        </div>
+                    </div>
+                    <!-- 외부 다이렉트 링크 버튼 -->
+                    <a id="external-link" href="#" target="_blank" class="text-xs flex items-center gap-1.5 text-opera-gold hover:text-yellow-400 border border-opera-gold/30 hover:border-opera-gold px-3 py-1.5 rounded-lg transition-all">
+                        <span>유튜브에서 직접 보기</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                    </a>
+                </div>
+
+                <!-- 비디오 컨테이너 -->
+                <div id="video-stage" class="relative w-full aspect-video rounded-xl overflow-hidden bg-stone-950 border border-stone-800 flex flex-col items-center justify-center text-center p-6">
+                    <!-- 기본 대기 상태 (커튼) -->
+                    <div id="stage-placeholder" class="flex flex-col items-center gap-4 py-8">
+                        <div class="text-6xl animate-bounce">🎭</div>
+                        <h3 class="text-xl font-bold text-stone-300">현재 무대가 비어 있습니다</h3>
+                        <p class="text-sm text-stone-500 max-w-xs">상단의 '임의 추출' 버튼을 누르면 웅장한 오페라 영상이 이곳에 임베드됩니다.</p>
+                    </div>
+
+                    <!-- 유튜브 iframe (처음에는 숨김) -->
+                    <iframe id="youtube-iframe" class="hidden absolute top-0 left-0 w-full h-full" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- 마스터 보드 (17개 체크리스트) -->
+        <section class="bg-opera-cardBg border border-stone-800 rounded-2xl p-6 shadow-xl">
+            <div class="flex items-center justify-between mb-4 border-b border-stone-800 pb-3">
+                <h3 class="text-lg font-bold text-stone-200 flex items-center gap-2">
+                    <span>👑</span> 오페라 컬렉션 보드
+                </h3>
+                <button id="reset-history" class="text-xs text-stone-500 hover:text-opera-gold transition">기록 초기화</button>
+            </div>
+            <p class="text-xs text-stone-400 mb-6 leading-relaxed">
+                각 번호를 클릭하면 수동으로 감상 완료 상태로 마킹할 수 있으며, 랜덤 추출 시 해당 번호가 자동으로 감상 완료 리스트에 체크됩니다.
+            </p>
+
+            <div class="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-9 gap-3" id="mastery-grid">
+                <!-- JS에 의해 1~17 슬롯이 생성됩니다 -->
+            </div>
+        </section>
+    </main>
+
+    <!-- 하단 푸터 -->
+    <footer class="border-t border-stone-900 bg-stone-950/80 py-6 text-center text-xs text-stone-600">
+        <p>© 2026 오페라 마스터 도전! All Rights Reserved.</p>
+        <p class="mt-1">Designed beautifully for classical lovers.</p>
+    </footer>
+
+    <!-- 알림 모달 -->
+    <div id="toast-message" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-opera-velvet border border-opera-gold/50 text-stone-100 text-sm py-3 px-6 rounded-full shadow-2xl opacity-0 transition-opacity duration-300 pointer-events-none z-50 flex items-center gap-2">
+        <span>🎉</span> <span id="toast-text">새로운 명작이 로드되었습니다!</span>
+    </div>
+
+    <!-- 스크립트 기능 처리 -->
+    <script>
+        // 상수 정의
+        const BASE_YOUTUBE_WATCH_URL = "https://www.youtube.com/watch?v=G1YS61pu8Rc&list=PLpEH6n3bBnA9j7Y08temu5DQO9qyUIpeI";
+        const BASE_YOUTUBE_EMBED_URL = "https://www.youtube.com/embed/G1YS61pu8Rc?list=PLpEH6n3bBnA9j7Y08temu5DQO9qyUIpeI";
+        const TOTAL_INDEX = 17;
+
+        // DOM 요소 캐싱
+        const extractBtn = document.getElementById('extract-btn');
+        const statusPanel = document.getElementById('status-panel');
+        const drawnIndexText = document.getElementById('drawn-index-text');
+        const externalLink = document.getElementById('external-link');
+        const stagePlaceholder = document.getElementById('stage-placeholder');
+        const youtubeIframe = document.getElementById('youtube-iframe');
+        const masteryGrid = document.getElementById('mastery-grid');
+        const masteryCounter = document.getElementById('mastery-counter');
+        const resetHistoryBtn = document.getElementById('reset-history');
+        const toastMessage = document.getElementById('toast-message');
+        const toastText = document.getElementById('toast-text');
+
+        // 상태 관리 (로컬스토리지를 연동해 새로고침해도 완독 기록 보존)
+        let masteredIndexes = JSON.parse(localStorage.getItem('opera_mastery')) || [];
+
+        // 초기 화면 설정 및 마스터 보드 빌드
+        function init() {
+            buildMasteryGrid();
+            updateMasteryCounter();
+        }
+
+        // 17개 타일 그리드 동적 생성
+        function buildMasteryGrid() {
+            masteryGrid.innerHTML = '';
+            for (let i = 1; i <= TOTAL_INDEX; i++) {
+                const isMastered = masteredIndexes.includes(i);
+                
+                const tile = document.createElement('button');
+                tile.id = `tile-${i}`;
+                tile.className = `p-3 rounded-lg border text-center font-bold text-sm transition-all flex flex-col items-center justify-center gap-1 ${
+                    isMastered 
+                    ? 'bg-opera-velvet border-opera-gold text-opera-gold shadow-md' 
+                    : 'bg-stone-900 border-stone-800 text-stone-500 hover:border-stone-700 hover:text-stone-300'
+                }`;
+                
+                tile.innerHTML = `
+                    <span class="text-[10px] uppercase block tracking-wider ${isMastered ? 'text-opera-gold/80' : 'text-stone-600'}">No.</span>
+                    <span class="text-base">${i}</span>
+                `;
+
+                // 개별 타일 클릭 시 완료 상태 토글 가능
+                tile.addEventListener('click', () => toggleMastery(i));
+                masteryGrid.appendChild(tile);
+            }
+        }
+
+        // 특정 인덱스 감상 완료 토글
+        function toggleMastery(index) {
+            if (masteredIndexes.includes(index)) {
+                masteredIndexes = masteredIndexes.filter(item => item !== index);
+                showToast(`인덱스 #${index}번이 완료 목록에서 제외되었습니다.`);
+            } else {
+                masteredIndexes.push(index);
+                showToast(`축하합니다! #${index}번 오페라를 완료하셨습니다. 🎓`);
+            }
+            saveState();
+            updateMasteryCounter();
+            updateTileUI(index);
+        }
+
+        // 단일 타일 상태 UI 업데이트
+        function updateTileUI(index) {
+            const tile = document.getElementById(`tile-${index}`);
+            if (!tile) return;
+
+            const isMastered = masteredIndexes.includes(index);
+            if (isMastered) {
+                tile.className = 'p-3 rounded-lg border text-center font-bold text-sm transition-all flex flex-col items-center justify-center gap-1 bg-opera-velvet border-opera-gold text-opera-gold shadow-md';
+                tile.querySelector('span').className = 'text-[10px] uppercase block tracking-wider text-opera-gold/80';
+            } else {
+                tile.className = 'p-3 rounded-lg border text-center font-bold text-sm transition-all flex flex-col items-center justify-center gap-1 bg-stone-900 border-stone-800 text-stone-500 hover:border-stone-700 hover:text-stone-300';
+                tile.querySelector('span').className = 'text-[10px] uppercase block tracking-wider text-stone-600';
+            }
+        }
+
+        // 달성도 카운터 업데이트
+        function updateMasteryCounter() {
+            masteryCounter.innerText = `달성도: ${masteredIndexes.length} / ${TOTAL_INDEX}`;
+            
+            if (masteredIndexes.length === TOTAL_INDEX) {
+                masteryCounter.className = "text-xs bg-yellow-500 text-stone-950 border border-yellow-300 px-3 py-1.5 rounded-full font-bold animate-pulse";
+                masteryCounter.innerText = "👑 오페라 마스터 등극!";
+            } else {
+                masteryCounter.className = "text-xs bg-opera-velvet text-opera-gold border border-opera-gold/30 px-3 py-1.5 rounded-full font-bold";
+            }
+        }
+
+        // 데이터 로컬 저장
+        function saveState() {
+            localStorage.setItem('opera_mastery', JSON.stringify(masteredIndexes));
+        }
+
+        // 커스텀 토스트 메시지 띄우기
+        function showToast(message) {
+            toastText.innerText = message;
+            toastMessage.style.opacity = '1';
+            
+            setTimeout(() => {
+                toastMessage.style.opacity = '0';
+            }, 2500);
+        }
+
+        // 임의 추출 작동 로직
+        function drawRandomOpera() {
+            // 버튼 비활성화 및 간단한 휠 애니메이션 시각효과 부여
+            extractBtn.disabled = true;
+            extractBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-stone-950" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                명작 무대 선정 중...
+            `;
+
+            setTimeout(() => {
+                // 1부터 17까지 자연수 추출
+                const randomIndex = Math.floor(Math.random() * TOTAL_INDEX) + 1;
+
+                // 유튜브 소스 완성 (Iframe 및 다이렉트 링크 전용)
+                const targetEmbedUrl = `${BASE_YOUTUBE_EMBED_URL}&index=${randomIndex}`;
+                const targetWatchUrl = `${BASE_YOUTUBE_WATCH_URL}&index=${randomIndex}`;
+
+                // 영상 및 상태 변경
+                youtubeIframe.src = targetEmbedUrl;
+                youtubeIframe.classList.remove('hidden');
+                stagePlaceholder.classList.add('hidden');
+
+                // 패널 정보 노출
+                statusPanel.classList.remove('hidden');
+                drawnIndexText.innerText = `현재 추천 명작 : 오페라 리스트 #${randomIndex}번 영상`;
+                externalLink.href = targetWatchUrl;
+
+                // 해당 인덱스 아직 미감상 상태였다면 자동으로 체크해줌
+                if (!masteredIndexes.includes(randomIndex)) {
+                    masteredIndexes.push(randomIndex);
+                    saveState();
+                    updateMasteryCounter();
+                    updateTileUI(randomIndex);
+                    showToast(`#${randomIndex}번 신작이 무대에 올랐습니다! 🎉`);
+                } else {
+                    showToast(`#${randomIndex}번 영상으로 다시 매칭되었습니다. 🔄`);
+                }
+
+                // 버튼 복구
+                extractBtn.disabled = false;
+                extractBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" />
+                    </svg>
+                    오페라 다시 추출하기
+                `;
+            }, 800); // 0.8초의 긴장감 넘치는 지연 효과
+        }
+
+        // 기록 초기화
+        resetHistoryBtn.addEventListener('click', () => {
+            if (confirm('오페라 마스터 달성도를 전부 초기화하시겠습니까?')) {
+                masteredIndexes = [];
+                saveState();
+                buildMasteryGrid();
+                updateMasteryCounter();
+                
+                // 로드되어 있는 영상 초기화
+                youtubeIframe.src = '';
+                youtubeIframe.classList.add('hidden');
+                stagePlaceholder.classList.remove('hidden');
+                statusPanel.classList.add('hidden');
+                
+                showToast('감상 달성도가 완전히 리셋되었습니다.');
+            }
+        });
+
+        // 추출 버튼 클릭 이벤트 리스너 등록
+        extractBtn.addEventListener('click', drawRandomOpera);
+
+        // 앱 구동
+        window.onload = init;
+    </script>
+</body>
+</html>
