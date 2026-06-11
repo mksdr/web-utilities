@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="ko" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>텔레서치 - 텔레그램 한글 검색 마스터</title>
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans KR', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'premium': '0 10px 30px -10px rgba(0, 0, 0, 0.08)',
+                        'premium-dark': '0 10px 30px -10px rgba(0, 0, 0, 0.5)',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full px-4 sm:px-0"></div>
+
+    <!-- Header Navbar -->
+    <header class="border-b border-slate-200/80 dark:border-slate-900/80 bg-white/70 dark:bg-slate-950/70 backdrop-blur-md sticky top-0 z-40 transition-colors">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <!-- Telegram-like Search Logo inside a nice frame -->
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+                    <svg class="w-5 h-5 transform -rotate-12 translate-x-[-1px] translate-y-[0.5px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-tight flex items-center gap-1.5">
+                        <span>텔레서치</span>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">Beta</span>
+                    </h1>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium hidden sm:block">Telegram Korean Search Optimizer</p>
+                </div>
+            </div>
+
+            <!-- Theme Segment Controller -->
+            <div class="bg-slate-100 dark:bg-slate-900 p-1 rounded-xl flex relative items-center w-[180px] sm:w-[220px]">
+                <button onclick="setTheme('light')" data-theme="light" class="theme-btn flex-1 text-xs font-medium py-1.5 rounded-lg transition-all text-center z-10 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100">
+                    Light
+                </button>
+                <button onclick="setTheme('dark')" data-theme="dark" class="theme-btn flex-1 text-xs font-medium py-1.5 rounded-lg transition-all text-center z-10 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100">
+                    Dark
+                </button>
+                <button onclick="setTheme('auto')" data-theme="auto" class="theme-btn flex-1 text-xs font-medium py-1.5 rounded-lg transition-all text-center z-10 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100">
+                    Auto
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-4 py-8 flex-1 w-full flex flex-col gap-8">
+        
+        <!-- Hero Information Block -->
+        <section class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-6 sm:p-8 rounded-2xl shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            <!-- Decorative light blobs -->
+            <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-2xl"></div>
+            <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-sky-500/10 rounded-full blur-2xl"></div>
+            
+            <div class="space-y-3 z-10 max-w-2xl">
+                <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-sky-200">
+                    텔레그램 검색창에 'ㅎㅗㅇ'만 쳐도 찾게 하세요!
+                </h2>
+                <p class="text-slate-300 text-sm leading-relaxed">
+                    텔레그램은 어절 단위로만 검색되기 때문에 한글 검색이 극히 어렵습니다. 아래에 메모 혹은 원문 텍스트를 입력하면, 자소 단위, 초성 단위, 중간 단어까지 모두 고려한 <strong>'검색 태그 패키지'</strong>가 자동 생성됩니다.
+                </p>
+                <div class="flex flex-wrap gap-2 pt-1 text-xs text-indigo-200">
+                    <span class="flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-md">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 자소 누적 (ㅎ ➡️ ㅎㅗ ➡️ ㅎㅗㅇ)
+                    </span>
+                    <span class="flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-md">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 초성 누적 (ㅎ ➡️ ㅎㄱ ➡️ ㅎㄱㄷ)
+                    </span>
+                    <span class="flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-md">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 부분 검색 (홍길동 ➡️ 길동 ➡️ 동)
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Quick Link / Badge -->
+            <div class="z-10 bg-white/10 backdrop-blur-sm border border-white/15 px-5 py-4 rounded-xl flex flex-col items-center gap-1 self-stretch md:self-auto justify-center min-w-[150px]">
+                <span class="text-xs font-semibold text-sky-300 uppercase tracking-wider">오늘의 꿀팁</span>
+                <span class="text-xs text-slate-300 text-center font-medium leading-normal">
+                    전체 복사 버튼으로<br/>본문에 바로 태그를 달아보세요!
+                </span>
+            </div>
+        </section>
+
+        <!-- Main Workspace -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Left Side: Input & Settings (5 Cols) -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                
+                <!-- Input Panel Card -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-premium dark:shadow-premium-dark p-5 sm:p-6 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                            </span>
+                            <h3 class="font-bold text-base">텍스트 입력</h3>
+                        </div>
+                        <button onclick="clearInput()" class="text-xs font-medium text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            비우기
+                        </button>
+                    </div>
+
+                    <textarea id="text-input" placeholder="홍길동 혹은 검색 최적화가 필요한 임의의 텍스트를 입력해 보세요..." class="w-full h-44 sm:h-52 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 focus:bg-white dark:focus:bg-slate-950 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm outline-none transition-all resize-none leading-relaxed" oninput="processText()"></textarea>
+
+                    <div class="mt-3 flex items-center justify-between text-xs text-slate-400 dark:text-slate-500">
+                        <span id="char-count">0글자 작성 중</span>
+                        <span class="flex items-center gap-1">
+                            <span class="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span> 실시간 자동 생성
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Custom Settings Panel Card -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-premium dark:shadow-premium-dark p-5 sm:p-6 transition-all duration-300">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                            </svg>
+                        </span>
+                        <h3 class="font-bold text-base">변환 상세 옵션</h3>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Setting 1: Complex Jaso Decomposition -->
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <div class="flex items-center h-5 mt-0.5">
+                                <input type="checkbox" id="opt-complex-jaso" checked onchange="processText()" class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 dark:bg-slate-950 dark:border-slate-800">
+                            </div>
+                            <div>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">복합 자모 키보드 단위 분리</span>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 leading-normal mt-0.5">ㅝ ➡️ ㅜ+ㅓ, ㄺ ➡️ ㄹ+ㄱ 등 키보드 연속 입력 순서로도 완벽히 검색되게 쪼갭니다.</p>
+                            </div>
+                        </label>
+
+                        <!-- Setting 2: Allow Middle Matching (N-Gram Substrings) -->
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <div class="flex items-center h-5 mt-0.5">
+                                <input type="checkbox" id="opt-allow-middle" checked onchange="processText()" class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 dark:bg-slate-950 dark:border-slate-800">
+                            </div>
+                            <div>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">중간 단어 부분 매칭 허용 (N-Gram)</span>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 leading-normal mt-0.5">"홍길동"에서 "길동", "동" 같은 중간 단어로 검색하는 경우도 누적 태그에 생성합니다.</p>
+                            </div>
+                        </label>
+
+                        <!-- Setting 3: Cumulative alphanumeric support -->
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <div class="flex items-center h-5 mt-0.5">
+                                <input type="checkbox" id="opt-english-num" checked onchange="processText()" class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 dark:bg-slate-950 dark:border-slate-800">
+                            </div>
+                            <div>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">영문 / 숫자 누적 검색 최적화</span>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 leading-normal mt-0.5">"iPhone" ➡️ "i", "iP", "iPh" 와 같이 누적 매칭용 빌드업을 진행합니다.</p>
+                            </div>
+                        </label>
+
+                        <!-- Setting 4: Append to original toggle -->
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <div class="flex items-center h-5 mt-0.5">
+                                <input type="checkbox" id="opt-append-mode" checked onchange="processText()" class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 dark:bg-slate-950 dark:border-slate-800">
+                            </div>
+                            <div>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">원본 메세지에 검색 태그 붙이기</span>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 leading-normal mt-0.5">복사하기를 눌렀을 때, 원본 내용의 하단에 자동으로 검색용 태그 블록을 묶어서 통째로 들고 갑니다.</p>
+                            </div>
+                        </label>
+
+                        <div class="border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
+                            <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-3">태그 출력 포맷 방식</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="setFormat('space')" id="fmt-space" class="fmt-btn px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center">
+                                    공백 분리 (숨김용)
+                                </button>
+                                <button onclick="setFormat('hashtag')" id="fmt-hashtag" class="fmt-btn px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center">
+                                    해시태그 (#)
+                                </button>
+                                <button onclick="setFormat('slash')" id="fmt-slash" class="fmt-btn px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center">
+                                    슬래시 (/) 구분
+                                </button>
+                                <button onclick="setFormat('bracket')" id="fmt-bracket" class="fmt-btn px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center">
+                                    대괄호 ([ ]) 패킹
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Optimized Search Result Cards (7 Cols) -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+                
+                <!-- Output Header / Metadata -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-premium dark:shadow-premium-dark">
+                    <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">최적화 결과물</span>
+                    <div class="flex items-center gap-4 text-xs font-medium text-slate-400 dark:text-slate-500">
+                        <span id="meta-tag-count">총 태그 수: 0개</span>
+                        <span id="meta-length-savings">추천: All-in-One 카피 권장</span>
+                    </div>
+                </div>
+
+                <!-- CARD 1: All-in-One Package Card (Top Recommendation) -->
+                <div class="bg-gradient-to-br from-indigo-50 to-sky-50 dark:from-indigo-950/20 dark:to-sky-950/20 border-2 border-indigo-500/30 rounded-2xl shadow-premium dark:shadow-premium-dark overflow-hidden transition-all duration-300">
+                    <div class="p-5 sm:p-6 border-b border-indigo-500/10">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <span class="text-xl">✨</span>
+                                <div>
+                                    <h4 class="font-bold text-base text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
+                                        All-in-One 마스터 검색 태그
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-600 text-white">강력 추천</span>
+                                    </h4>
+                                    <p class="text-xs text-indigo-700/70 dark:text-indigo-300/60 mt-0.5">글자 누적 + 초성 누적 + 자소 누적이 모두 최적화되어 압축된 무적의 검색용 종합 세트입니다.</p>
+                                </div>
+                            </div>
+                            <button onclick="copyOutput('all-in-one-text', 'btn-copy-aio')" id="btn-copy-aio" class="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-all shadow-md shadow-indigo-600/15 active:scale-[0.98] flex items-center gap-1.5 shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                                </svg>
+                                전체 복사
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-5 sm:p-6 bg-white/50 dark:bg-slate-900/40">
+                        <!-- Preview Box -->
+                        <div id="aio-preview" class="p-4 rounded-xl border border-indigo-500/10 bg-white/80 dark:bg-slate-950/80 font-mono text-sm leading-relaxed max-h-56 overflow-y-auto whitespace-pre-wrap break-all min-h-[80px]">
+                            <span class="text-slate-400 dark:text-slate-600 italic">왼쪽에 글을 작성하면 원본 본문 밑에 검색 태그를 합쳐서 통째로 완성해 드립니다!</span>
+                        </div>
+                        <textarea id="all-in-one-text" class="hidden"></textarea>
+                    </div>
+                </div>
+
+                <!-- CARD 2: Cumulative Substrings (Word level) -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-premium dark:shadow-premium-dark p-5 sm:p-6 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4 gap-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-lg">📝</span>
+                            <div>
+                                <h4 class="font-bold text-sm">부분 및 누적 글자 검색어 (N-Gram)</h4>
+                                <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">글자가 타이핑되는 앞부분 또는 부분 단어를 누적 조합합니다.</p>
+                            </div>
+                        </div>
+                        <button onclick="copyOutput('text-sub-preview', 'btn-copy-sub')" id="btn-copy-sub" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs px-3 py-2 rounded-lg transition-all active:scale-[0.98] flex items-center gap-1 shrink-0">
+                            복사
+                        </button>
+                    </div>
+                    <div id="text-sub-preview" class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 font-mono text-xs leading-relaxed max-h-36 overflow-y-auto break-all min-h-[50px] whitespace-pre-wrap"></div>
+                </div>
+
+                <!-- CARD 3: Choseong Cumulative Card -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-premium dark:shadow-premium-dark p-5 sm:p-6 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4 gap-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-lg">🔠</span>
+                            <div>
+                                <h4 class="font-bold text-sm">한글 초성 누적 검색어 (Initial Consonant)</h4>
+                                <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">ㅎ, ㅎㄱ, ㅎㄱㄷ 처럼 자음으로 치는 즉시 검색되도록 합니다.</p>
+                            </div>
+                        </div>
+                        <button onclick="copyOutput('text-cho-preview', 'btn-copy-cho')" id="btn-copy-cho" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs px-3 py-2 rounded-lg transition-all active:scale-[0.98] flex items-center gap-1 shrink-0">
+                            복사
+                        </button>
+                    </div>
+                    <div id="text-cho-preview" class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 font-mono text-xs leading-relaxed max-h-36 overflow-y-auto break-all min-h-[50px] whitespace-pre-wrap"></div>
+                </div>
+
+                <!-- CARD 4: Jaso Cumulative Card -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-premium dark:shadow-premium-dark p-5 sm:p-6 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4 gap-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-lg">🧩</span>
+                            <div>
+                                <h4 class="font-bold text-sm">자소 완전 분해 누적 검색어 (Keystroke Level)</h4>
+                                <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">글자가 쪼개지는 자소 순서마다 매칭 검색어를 생성합니다.</p>
+                            </div>
+                        </div>
+                        <button onclick="copyOutput('text-jaso-preview', 'btn-copy-jaso')" id="btn-copy-jaso" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs px-3 py-2 rounded-lg transition-all active:scale-[0.98] flex items-center gap-1 shrink-0">
+                            복사
+                        </button>
+                    </div>
+                    <div id="text-jaso-preview" class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 font-mono text-xs leading-relaxed max-h-36 overflow-y-auto break-all min-h-[50px] whitespace-pre-wrap"></div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Telegram Search Principle Explanation Block -->
+        <section class="border border-slate-200 dark:border-slate-900 rounded-2xl p-6 bg-slate-50 dark:bg-slate-900/20">
+            <h3 class="font-bold text-sm text-slate-800 dark:text-slate-300 mb-3 flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                텔레그램 검색 알고리즘 정보 공유
+            </h3>
+            <ul class="space-y-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed list-disc list-inside">
+                <li>텔레그램은 기본적으로 '공백' 혹은 '어절의 시작 부분'을 기준으로 검색을 처리합니다. 예를 들어 <strong>'홍길동'</strong>이라는 한글 텍스트가 있을 때 텔레그램 검색창에 <strong>'길동'</strong>이나 <strong>'ㅎㄱㄷ'</strong> 혹은 자소 단위 <strong>'ㅎㅗㅇ'</strong>을 치면 검색 매칭이 되지 않습니다.</li>
+                <li>이를 보완하기 위해 글 작성 단계에서 해당 단어의 누적 단어셋을 공백(` `)으로 분리해 주입하는 것입니다.</li>
+                <li>본 툴은 키보드로 한글을 쓸 때 생기는 모든 정적 상태를 시뮬레이션하여 데이터베이스 태그화하듯이 검색 태그를 자동화합니다.</li>
+                <li>포스트 맨 하단에 <code>🔍 검색용 태그: ...</code> 문구와 함께 메타 데이터를 넣어두면 채널이나 본인 보관함 내에서 <strong>초성 자음 타자만 쳐도 1초 만에 해당 글을 즉시 추적</strong>할 수 있습니다.</li>
+            </ul>
+        </section>
+    </main>
+
+    <!-- Footer Footer -->
+    <footer class="border-t border-slate-200/80 dark:border-slate-950 bg-white dark:bg-slate-950 transition-colors py-6 text-center text-xs text-slate-400 dark:text-slate-600">
+        <p>© 2026 TeleSearch. 제작: 일반 유저를 위한 무적의 검색 최적화기</p>
+    </footer>
+
+    <!-- Core App Logic Scripts -->
+    <script>
+        // Constants for Hangul Decomposition
+        const CHO_SUNG = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+        const JUNG_SUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
+        const JONG_SUNG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+
+        // Detail Keystroke Mapping table for complex vowels and double consonants to support absolute incremental step matching
+        const COMPLEX_MAP = {
+            // Vowels
+            'ㅘ': ['ㅗ', 'ㅏ'],
+            'ㅙ': ['ㅗ', 'ㅐ'],
+            'ㅚ': ['ㅗ', 'ㅣ'],
+            'ㅝ': ['ㅜ', 'ㅓ'],
+            'ㅞ': ['ㅜ', 'ㅔ'],
+            'ㅟ': ['ㅜ', 'ㅣ'],
+            'ㅢ': ['ㅡ', 'ㅣ'],
+            // Double consonants
+            'ㄲ': ['ㄱ', 'ㄱ'],
+            'ㄸ': ['ㄷ', 'ㄷ'],
+            'ㅃ': ['ㅂ', 'ㅂ'],
+            'ㅆ': ['ㅅ', 'ㅅ'],
+            'ㅉ': ['ㅈ', 'ㅈ'],
+            'ㄳ': ['ㄱ', 'ㅅ'],
+            'ㄵ': ['ㄴ', 'ㅈ'],
+            'ㄶ': ['ㄴ', 'ㅎ'],
+            'ㄺ': ['ㄹ', 'ㄱ'],
+            'ㄻ': ['ㄹ', 'ㅁ'],
+            'ㄼ': ['ㄹ', 'ㅂ'],
+            'ㄽ': ['ㄹ', 'ㅅ'],
+            'ㄾ': ['ㄹ', 'ㅌ'],
+            'ㄿ': ['ㄹ', 'ㅍ'],
+            'ㅀ': ['ㄹ', 'ㅎ'],
+            'ㅄ': ['ㅂ', 'ㅅ']
+        };
+
+        // Current App State
+        let currentFormat = 'space'; // 'space' | 'hashtag' | 'slash' | 'bracket'
+
+        // Initialize theme settings
+        let currentTheme = localStorage.getItem('tele-search-theme') || 'auto';
+        setTheme(currentTheme);
+
+        // Run theme listener for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (currentTheme === 'auto') {
+                applyTheme('auto');
+            }
+        });
+
+        // Initialize state formatting buttons on startup
+        updateFormatUI();
+
+        // 1. Decompose Hangul syllable to {cho, jung, jong}
+        function decomposeCharacter(char) {
+            const code = char.charCodeAt(0);
+            if (code >= 0xAC00 && code <= 0xD7A3) {
+                const offset = code - 0xAC00;
+                const jongIndex = offset % 28;
+                const jungIndex = ((offset - jongIndex) / 28) % 21;
+                const choIndex = Math.floor(((offset - jongIndex) / 28) / 21);
+                
+                return {
+                    cho: CHO_SUNG[choIndex],
+                    jung: JUNG_SUNG[jungIndex],
+                    jong: JONG_SUNG[jongIndex]
+                };
+            }
+            return null; // Non-syllable (English, number, etc.)
+        }
+
+        // 2. Fully break down character to individual basic jaso keystrokes (optional advanced decomposition)
+        function getBasicJasoList(char, splitComplex) {
+            const decomp = decomposeCharacter(char);
+            if (!decomp) {
+                const code = char.charCodeAt(0);
+                // If it is already a Jamo compatibility character
+                if (code >= 0x3131 && code <= 0x318E) {
+                    if (splitComplex && COMPLEX_MAP[char]) {
+                        return [...COMPLEX_MAP[char]];
+                    }
+                    return [char];
+                }
+                return [char];
+            }
+
+            let list = [];
+            
+            // Choseong
+            if (splitComplex && COMPLEX_MAP[decomp.cho]) {
+                list.push(...COMPLEX_MAP[decomp.cho]);
+            } else {
+                list.push(decomp.cho);
+            }
+
+            // Jungseong
+            if (splitComplex && COMPLEX_MAP[decomp.jung]) {
+                list.push(...COMPLEX_MAP[decomp.jung]);
+            } else {
+                list.push(decomp.jung);
+            }
+
+            // Jongseong (only if exists)
+            if (decomp.jong) {
+                if (splitComplex && COMPLEX_MAP[decomp.jong]) {
+                    list.push(...COMPLEX_MAP[decomp.jong]);
+                } else {
+                    list.push(decomp.jong);
+                }
+            }
+
+            return list;
+        }
+
+        // Core Generation Algorithm
+        function generateOptimizedTags(inputText, options = {}) {
+            const {
+                splitComplex = true,
+                allowMiddle = true,
+                enableEnglish = true
+            } = options;
+
+            // Split by words, preserving structure
+            const words = inputText.split(/\s+/).filter(w => w.length > 0);
+
+            let allSubstrings = [];
+            let allChoseongs = [];
+            let allJasos = [];
+
+            words.forEach(word => {
+                // Word N-gram cumulative extraction
+                if (allowMiddle) {
+                    for (let i = 0; i < word.length; i++) {
+                        for (let j = i + 1; j <= word.length; j++) {
+                            const sub = word.substring(i, j);
+                            allSubstrings.push(sub);
+                        }
+                    }
+                } else {
+                    // Prefix cumulative only
+                    for (let j = 1; j <= word.length; j++) {
+                        const sub = word.substring(0, j);
+                        allSubstrings.push(sub);
+                    }
+                }
+
+                // Choseong extraction
+                let wordChoList = [];
+                for (let i = 0; i < word.length; i++) {
+                    const char = word[i];
+                    const decomp = decomposeCharacter(char);
+                    if (decomp) {
+                        wordChoList.push(decomp.cho);
+                    } else {
+                        // Include English and numbers in cumulative choseong sequences for consistency
+                        if (/[a-zA-Z0-9]/.test(char) && enableEnglish) {
+                            wordChoList.push(char);
+                        }
+                    }
+                }
+
+                // Cumulative Choseongs
+                let cumulativeCho = "";
+                wordChoList.forEach(cho => {
+                    cumulativeCho += cho;
+                    allChoseongs.push(cumulativeCho);
+                });
+
+                // Jaso cumulative extraction
+                let wordJasoList = [];
+                for (let i = 0; i < word.length; i++) {
+                    const char = word[i];
+                    const jasos = getBasicJasoList(char, splitComplex);
+                    wordJasoList.push(...jasos);
+                }
+
+                // Cumulative Jaso
+                let cumulativeJaso = "";
+                wordJasoList.forEach(jaso => {
+                    cumulativeJaso += jaso;
+                    allJasos.push(cumulativeJaso);
+                });
+            });
+
+            // Clean list helper: remove blank strings, remove redundant punctuation-only tags, and deduplicate
+            const cleanList = (list) => {
+                let cleaned = list.map(item => item.trim()).filter(item => item.length > 0);
+                // Remove pure non-alphanumeric punctuation marks from search index to avoid bloating
+                cleaned = cleaned.filter(item => !/^[\!@#\$%\^&\*\(\)_\+\-=\[\]\{\};':",\./<>\?\\|`~]+$/.test(item));
+                return [...new Set(cleaned)];
+            };
+
+            const finalSubstrings = cleanList(allSubstrings);
+            const finalChoseongs = cleanList(allChoseongs);
+            const finalJasos = cleanList(allJasos);
+
+            // Merge for All-in-One master collection
+            const allInOneMerged = [...new Set([...finalSubstrings, ...finalChoseongs, ...finalJasos])];
+
+            return {
+                substrings: finalSubstrings,
+                choseongs: finalChoseongs,
+                jasos: finalJasos,
+                allInOne: allInOneMerged
+            };
+        }
+
+        // Apply formatting (spaces, hashtags, slashes, brackets) to an array of tags
+        function formatTags(tagsArray, formatType) {
+            if (tagsArray.length === 0) return "";
+
+            if (formatType === 'hashtag') {
+                return tagsArray
+                    .map(tag => {
+                        // Remove special characters that violate standard hashtag rules
+                        const safeTag = tag.replace(/[^a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ]/g, '');
+                        return safeTag ? `#${safeTag}` : '';
+                    })
+                    .filter(t => t.length > 0)
+                    .join(' ');
+            } else if (formatType === 'bracket') {
+                return `[ ${tagsArray.join(' ')} ]`;
+            } else if (formatType === 'slash') {
+                return tagsArray.join(' / ');
+            } else {
+                return tagsArray.join(' ');
+            }
+        }
+
+        // Read options and update preview
+        function processText() {
+            const input = document.getElementById('text-input').value;
+            const charCountSpan = document.getElementById('char-count');
+            charCountSpan.textContent = `${input.length}글자 작성 중`;
+
+            // Elements for Preview
+            const previewSub = document.getElementById('text-sub-preview');
+            const previewCho = document.getElementById('text-cho-preview');
+            const previewJaso = document.getElementById('text-jaso-preview');
+            const previewAio = document.getElementById('aio-preview');
+            const hiddenAioTextarea = document.getElementById('all-in-one-text');
+
+            // Metadata Indicators
+            const metaTagCount = document.getElementById('meta-tag-count');
+
+            if (!input.trim()) {
+                // Empty State Handler
+                previewSub.innerHTML = '<span class="text-slate-400 dark:text-slate-600 italic">글을 작성하면 결과가 이곳에 출력됩니다...</span>';
+                previewCho.innerHTML = '<span class="text-slate-400 dark:text-slate-600 italic">글을 작성하면 결과가 이곳에 출력됩니다...</span>';
+                previewJaso.innerHTML = '<span class="text-slate-400 dark:text-slate-600 italic">글을 작성하면 결과가 이곳에 출력됩니다...</span>';
+                previewAio.innerHTML = '<span class="text-slate-400 dark:text-slate-600 italic">왼쪽에 글을 작성하면 원본 본문 밑에 검색 태그를 합쳐서 통째로 완성해 드립니다! ✨</span>';
+                hiddenAioTextarea.value = "";
+                metaTagCount.textContent = '총 태그 수: 0개';
+                return;
+            }
+
+            // Get setting values
+            const splitComplex = document.getElementById('opt-complex-jaso').checked;
+            const allowMiddle = document.getElementById('opt-allow-middle').checked;
+            const enableEnglish = document.getElementById('opt-english-num').checked;
+            const appendMode = document.getElementById('opt-append-mode').checked;
+
+            // Generate Tags
+            const results = generateOptimizedTags(input, { splitComplex, allowMiddle, enableEnglish });
+
+            // Format tags based on chosen format type
+            const formattedSub = formatTags(results.substrings, currentFormat);
+            const formattedCho = formatTags(results.choseongs, currentFormat);
+            const formattedJaso = formatTags(results.jasos, currentFormat);
+            const formattedAio = formatTags(results.allInOne, currentFormat);
+
+            // Update specific cards
+            previewSub.textContent = formattedSub || "(태그 없음)";
+            previewCho.textContent = formattedCho || "(태그 없음)";
+            previewJaso.textContent = formattedJaso || "(태그 없음)";
+
+            // Build All-in-One content
+            let finalAioPayload = "";
+            if (appendMode) {
+                finalAioPayload = `${input}\n\n🔍 검색용 태그 (TeleSearch):\n${formattedAio}`;
+            } else {
+                finalAioPayload = formattedAio;
+            }
+
+            // Update All-In-One visual container
+            previewAio.textContent = finalAioPayload;
+            hiddenAioTextarea.value = finalAioPayload;
+
+            // Update Metadata indicators
+            metaTagCount.textContent = `총 태그 수: ${results.allInOne.length}개`;
+        }
+
+        // Copy mechanism using iframe-safe temporary selection logic
+        function copyOutput(sourceElementId, buttonId) {
+            let textToCopy = "";
+            const element = document.getElementById(sourceElementId);
+            
+            if (element.tagName === 'TEXTAREA') {
+                textToCopy = element.value;
+            } else {
+                textToCopy = element.textContent;
+            }
+
+            if (!textToCopy || textToCopy.includes("글을 작성하면") || textToCopy === "(태그 없음)") {
+                showToast('복사할 텍스트가 없습니다. 내용을 먼저 입력해 주세요.', 'error');
+                return;
+            }
+
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = textToCopy;
+            tempTextarea.style.position = 'fixed';
+            tempTextarea.style.opacity = '0';
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+
+            try {
+                const isSuccessful = document.execCommand('copy');
+                if (isSuccessful) {
+                    showToast('클립보드에 복사 완료!');
+                    animateButtonSuccess(buttonId);
+                } else {
+                    showToast('복사 실행에 실패했습니다. 수동으로 복사하세요.', 'error');
+                }
+            } catch (err) {
+                showToast('클립보드 접근 권한 오류가 발생했습니다.', 'error');
+            }
+            document.body.removeChild(tempTextarea);
+        }
+
+        // Animate Button on successful copy operations
+        function animateButtonSuccess(btnId) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+
+            const originalHTML = btn.innerHTML;
+            const originalClasses = [...btn.classList];
+
+            btn.innerHTML = `
+                <svg class="w-4 h-4 mr-1 animate-ping" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                </svg>
+                복사 완료!
+            `;
+
+            // Give it an energetic green look for success state
+            btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700', 'bg-slate-100', 'hover:bg-slate-200');
+            btn.classList.add('bg-emerald-600', 'text-white', 'hover:bg-emerald-700');
+
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.className = ""; // Reset class list
+                originalClasses.forEach(cls => btn.classList.add(cls));
+            }, 1800);
+        }
+
+        // Trigger interactive toast elements
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            toast.className = `flex items-center p-4 mb-3 rounded-2xl shadow-lg border transform translate-y-2 opacity-0 transition-all duration-300 ${
+                type === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/90 dark:border-emerald-900/40 dark:text-emerald-300'
+                : 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/90 dark:border-rose-900/40 dark:text-rose-300'
+            }`;
+
+            const checkIcon = `
+                <svg class="w-5 h-5 mr-3 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            `;
+            const errorIcon = `
+                <svg class="w-5 h-5 mr-3 text-rose-600 dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            `;
+
+            toast.innerHTML = `
+                ${type === 'success' ? checkIcon : errorIcon}
+                <span class="text-xs font-semibold leading-normal">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 2500);
+        }
+
+        // Change formatting style state
+        function setFormat(format) {
+            currentFormat = format;
+            updateFormatUI();
+            processText();
+        }
+
+        // Refresh formatting UI active buttons
+        function updateFormatUI() {
+            const formats = ['space', 'hashtag', 'slash', 'bracket'];
+            formats.forEach(f => {
+                const btn = document.getElementById(`fmt-${f}`);
+                if (f === currentFormat) {
+                    btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600', 'dark:bg-indigo-500', 'dark:border-indigo-500', 'shadow-sm');
+                    btn.classList.remove('bg-slate-50', 'text-slate-600', 'border-slate-200', 'dark:bg-slate-900', 'dark:text-slate-400', 'dark:border-slate-800');
+                } else {
+                    btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600', 'dark:bg-indigo-500', 'dark:border-indigo-500', 'shadow-sm');
+                    btn.classList.add('bg-slate-50', 'text-slate-600', 'border-slate-200', 'dark:bg-slate-900', 'dark:text-slate-400', 'dark:border-slate-800', 'hover:bg-slate-100', 'dark:hover:bg-slate-800/80');
+                }
+            });
+        }
+
+        // Empty input text
+        function clearInput() {
+            document.getElementById('text-input').value = "";
+            processText();
+            showToast('텍스트 창을 비웠습니다.');
+        }
+
+        // Apply dark, light, or auto classes to head
+        function applyTheme(theme) {
+            const root = document.documentElement;
+            if (theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                root.classList.add('dark');
+            } else {
+                root.classList.remove('dark');
+            }
+
+            // Sync visual sliding buttons
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                const btnTheme = btn.dataset.theme;
+                if (btnTheme === theme) {
+                    btn.classList.add('bg-white', 'dark:bg-slate-800', 'text-indigo-600', 'dark:text-indigo-400', 'shadow-sm', 'font-semibold');
+                    btn.classList.remove('text-slate-500', 'dark:text-slate-400', 'font-medium');
+                } else {
+                    btn.classList.remove('bg-white', 'dark:bg-slate-800', 'text-indigo-600', 'dark:text-indigo-400', 'shadow-sm', 'font-semibold');
+                    btn.classList.add('text-slate-500', 'dark:text-slate-400', 'font-medium');
+                }
+            });
+        }
+
+        // Set global theme & write to localStorage
+        function setTheme(theme) {
+            currentTheme = theme;
+            localStorage.setItem('tele-search-theme', theme);
+            applyTheme(theme);
+        }
+    </script>
+</body>
+</html>
